@@ -23,7 +23,8 @@ interface SearXNGResponse {
 }
 
 async function testSearch(query: string) {
-  const searxngUrl = "http://searxng.vier.services/search"
+  const baseUrl = (process.env.SEARXNG_URL ?? "http://searxng.vier.services").replace(/\/$/, "")
+  const searxngUrl = baseUrl.endsWith("/search") ? baseUrl : `${baseUrl}/search`
 
   try {
     console.log(`\n🔍 Testing search query: "${query}"`)
@@ -32,7 +33,6 @@ async function testSearch(query: string) {
     const params = new URLSearchParams()
     params.append("q", query)
     params.append("format", "json")
-    params.append("results_on_new_tab", "0")
     params.append("pageno", "1")
 
     const fullUrl = `${searxngUrl}?${params.toString()}`
@@ -40,13 +40,22 @@ async function testSearch(query: string) {
     console.log(`Fetching from: ${searxngUrl}`)
     console.log(`Query: ${query}\n`)
 
-    const response = await fetch(fullUrl, {
-      method: "GET",
-      headers: {
-        "User-Agent": "OpenCode-SearXNG-Tool-Test/1.0",
-        Accept: "application/json",
-      },
-    })
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), 10000)
+
+    let response: Response
+    try {
+      response = await fetch(fullUrl, {
+        method: "GET",
+        headers: {
+          "User-Agent": "OpenCode-SearXNG-Tool-Test/1.0",
+          Accept: "application/json",
+        },
+        signal: controller.signal,
+      })
+    } finally {
+      clearTimeout(timeoutId)
+    }
 
     if (!response.ok) {
       console.error(`❌ HTTP Error: ${response.status} ${response.statusText}`)
