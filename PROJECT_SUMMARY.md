@@ -160,6 +160,7 @@ searxng-tool/
 ├── .opencode/
 │   └── tool/
 │       └── searxng-search.ts          # Main tool implementation
+├── OPENCODE_INSTALLATION.md            # End-user OpenCode setup guide
 ├── .gitignore                         # Git configuration
 ├── package.json                       # Node.js dependencies
 ├── tsconfig.json                      # TypeScript config
@@ -178,7 +179,7 @@ searxng-tool/
 cp -r .opencode /path/to/your/opencode-project/
 
 # Install dependencies
-npm install
+cd .opencode && npm install
 
 # Restart OpenCode
 ```
@@ -192,15 +193,14 @@ searxng-search({ query: "your search query" })
 ## Configuration Points
 
 ### Service URL
-Located in `.opencode/tool/searxng-search.ts` line ~62:
-```typescript
-const searxngUrl = "http://searxng.vier.services/search"
-```
+Set `SEARXNG_URL` environment variable before launching OpenCode.
+
+Default fallback: `http://searxng.vier.services`
 
 ### Timeout Value
-Located in `.opencode/tool/searxng-search.ts` line ~78:
+Implemented in `.opencode/tool/searxng-search.ts` using AbortController:
 ```typescript
-timeout: 10000  // milliseconds
+setTimeout(() => controller.abort(), 10000)
 ```
 
 ### Result Limit
@@ -255,7 +255,7 @@ Others (may vary in availability):
 - Formatted text for readability
 
 ### Extensibility
-- Easy to modify service URL
+- Service URL configurable via `SEARXNG_URL`
 - Configurable timeout
 - Adjustable result limit
 - Support for additional parameters
@@ -335,7 +335,7 @@ The tool connects to an external SearXNG instance. No local server deployment ne
 
 ### Network
 - HTTP by default (consider HTTPS instances)
-- Timeout protection
+- Timeout protection via AbortController
 - Error handling for failures
 
 ## Future Enhancements
@@ -382,4 +382,4 @@ MIT License - Feel free to use, modify, and distribute.
 **Version**: 1.0.0  
 **Created**: December 2024  
 **Status**: Production Ready  
-**Last Updated**: December 15, 2024
+**Last Updated**: April 2025

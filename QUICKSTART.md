@@ -20,7 +20,9 @@ cp .opencode/tool/searxng-search.ts ~/.config/opencode/tool/
 ### 2. Install Dependencies
 
 ```bash
-npm install
+cd .opencode && npm install
+# or
+cd .opencode && bun install
 ```
 
 ### 3. Restart OpenCode
@@ -108,9 +110,9 @@ You'll get results like this:
 ### Tool Not Working?
 
 1. Check that `.opencode/tool/searxng-search.ts` exists
-2. Run `npm install`
+2. Run `cd .opencode && npm install`
 3. Restart OpenCode
-4. Check that no firewall is blocking `http://searxng.vier.services`
+4. Check that no firewall is blocking `http://searxng.vier.services`, or set `SEARXNG_URL` to a reachable instance
 
 ### Getting No Results?
 

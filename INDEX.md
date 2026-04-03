@@ -14,7 +14,7 @@
 | [README.md](README.md) | Complete documentation | 15 min |
 | [INTEGRATION_GUIDE.md](INTEGRATION_GUIDE.md) | Advanced integration | 20 min |
 | [PROJECT_SUMMARY.md](PROJECT_SUMMARY.md) | Technical overview | 20 min |
-| [VERIFICATION.md](VERIFICATION.md) | Pre-deployment checklist | 10 min |
+| [OPENCODE_INSTALLATION.md](OPENCODE_INSTALLATION.md) | End-user OpenCode setup guide | 15 min |
 | [FILES.md](FILES.md) | File reference guide | 10 min |
 | [INDEX.md](INDEX.md) | This file | 5 min |
 
@@ -37,7 +37,7 @@
 
 ### "I want to install it now"
 1. Read: [QUICKSTART.md](QUICKSTART.md) (Step 1-3)
-2. Run: `npm install`
+2. Run: `cd .opencode && npm install`
 3. Copy `.opencode/` to your project
 4. Restart OpenCode
 5. Done!
@@ -54,7 +54,7 @@
 4. Restart OpenCode
 
 ### "I'm deploying to production"
-1. Check: [VERIFICATION.md](VERIFICATION.md) checklist
+1. Check: [OPENCODE_INSTALLATION.md](OPENCODE_INSTALLATION.md) setup checklist
 2. Review: [INTEGRATION_GUIDE.md](INTEGRATION_GUIDE.md) (Deployment section)
 3. Test: Using [test-tool.ts](test-tool.ts)
 4. Security: Review [PROJECT_SUMMARY.md](PROJECT_SUMMARY.md) security section
@@ -110,7 +110,7 @@ OpenCode Agent
 searxng-search Tool
      ↓
 SearXNG API
-(http://searxng.vier.services)
+($SEARXNG_URL (default: http://searxng.vier.services))
      ↓
 Returns Results
 (JSON + Text Format)
@@ -202,7 +202,7 @@ See: [README.md](README.md) Troubleshooting section
 See: [PROJECT_SUMMARY.md](PROJECT_SUMMARY.md) Architecture section
 
 ### Deploy to Production
-See: [VERIFICATION.md](VERIFICATION.md) checklist
+See: [OPENCODE_INSTALLATION.md](OPENCODE_INSTALLATION.md) setup checklist
 
 ---
 
@@ -211,13 +211,13 @@ See: [VERIFICATION.md](VERIFICATION.md) checklist
 ### By Audience
 **New Users** → QUICKSTART.md, README.md
 **Developers** → PROJECT_SUMMARY.md, .opencode/tool/searxng-search.ts
-**Administrators** → INTEGRATION_GUIDE.md, VERIFICATION.md
+**Administrators** → INTEGRATION_GUIDE.md, OPENCODE_INSTALLATION.md
 **Architects** → PROJECT_SUMMARY.md, FILES.md
 
 ### By Purpose
 **Installation** → QUICKSTART.md, INTEGRATION_GUIDE.md
 **Reference** → README.md, FILES.md
-**Verification** → VERIFICATION.md, PROJECT_SUMMARY.md
+**Verification** → OPENCODE_INSTALLATION.md, PROJECT_SUMMARY.md
 **Development** → .opencode/tool/searxng-search.ts, tsconfig.json
 
 ### By Topic
@@ -234,19 +234,19 @@ See: [VERIFICATION.md](VERIFICATION.md) checklist
 ### Express Install (2 minutes)
 ```bash
 cp -r .opencode /your/project/
-npm install
+cd .opencode && npm install
 # Restart OpenCode
 ```
 
 ### Full Install (5 minutes)
 1. Read QUICKSTART.md
 2. Copy .opencode directory
-3. Run npm install
+3. Run cd .opencode && npm install
 4. Restart OpenCode
 5. Test with sample query
 
 ### Production Install (30 minutes)
-1. Run through VERIFICATION.md checklist
+1. Run through OPENCODE_INSTALLATION.md checklist
 2. Read INTEGRATION_GUIDE.md
 3. Configure service URL if needed
 4. Run test-tool.ts
@@ -262,13 +262,13 @@ npm install
 - **Configuration** → INTEGRATION_GUIDE.md or PROJECT_SUMMARY.md
 - **Troubleshooting** → README.md or INTEGRATION_GUIDE.md
 - **Code** → PROJECT_SUMMARY.md or .opencode/tool/searxng-search.ts
-- **Deployment** → VERIFICATION.md or INTEGRATION_GUIDE.md
+- **Deployment** → OPENCODE_INSTALLATION.md or INTEGRATION_GUIDE.md
 
 ### External Resources
-- **OpenCode Docs**: https://opencode.ai/docs/custom-tools/
+- **OpenCode Docs**: https://opencode.ai/docs/
 - **SearXNG Docs**: https://docs.searxng.org/
 - **OpenCode Discord**: https://opencode.ai/discord
-- **Issues**: https://github.com/sst/opencode/issues
+- **Issues**: https://github.com/anomalyco/opencode/issues
 
 ---
 
@@ -297,7 +297,7 @@ npm install
 ## Next Steps
 
 1. **Quick Start**: Read [QUICKSTART.md](QUICKSTART.md)
-2. **Install**: Copy `.opencode/` and run `npm install`
+2. **Install**: Copy `.opencode/` and run `cd .opencode && npm install`
 3. **Restart**: Restart OpenCode
 4. **Use**: Ask an agent to search!
 
@@ -319,5 +319,5 @@ The project includes:
 
 ---
 
-*Last Updated: December 15, 2024*
+*Last Updated: April 2025*
 *For complete information, see the individual documentation files.*
