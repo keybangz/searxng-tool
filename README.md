@@ -25,7 +25,7 @@ cp -r .opencode /path/to/your/opencode-project/.opencode/
 Then install dependencies:
 
 ```bash
-npm install
+cd .opencode && npm install
 ```
 
 ## Usage
@@ -89,15 +89,15 @@ If a search fails, the tool returns an error response:
 
 ## Configuration
 
-The tool is configured to connect to the SearXNG instance at:
+Set the `SEARXNG_URL` environment variable to configure which SearXNG instance to use:
+
+```bash
+export SEARXNG_URL="https://your-instance.example.com"
+```
+
+If `SEARXNG_URL` is not set, the tool falls back to:
 ```
 http://searxng.vier.services
-```
-
-To use a different SearXNG instance, modify the `searxngUrl` in `.opencode/tool/searxng-search.ts`:
-
-```typescript
-const searxngUrl = "http://your-searxng-instance.com/search"
 ```
 
 ## Search Tips
@@ -164,7 +164,7 @@ Limit results to a specific time period:
 
 ## Timeout Behavior
 
-The tool has a 10-second timeout for API requests to SearXNG. If the search takes longer than 10 seconds, it will return an error message.
+The tool enforces a 10-second timeout using `AbortController` and `setTimeout`. If the search takes longer than 10 seconds, it aborts the request and returns an error message.
 
 ## Rate Limiting
 
@@ -261,6 +261,7 @@ searxng-tool/
 ├── .opencode/
 │   └── tool/
 │       └── searxng-search.ts       # Main tool implementation
+├── OPENCODE_INSTALLATION.md         # End-user OpenCode setup guide
 ├── package.json                    # Dependencies
 ├── tsconfig.json                   # TypeScript config
 └── README.md                       # This file
@@ -277,10 +278,9 @@ tsc
 To customize the tool:
 
 1. Edit `.opencode/tool/searxng-search.ts`
-2. Update the `searxngUrl` constant for different instances
-3. Modify the `execute` function to change behavior
-4. Adjust the `results` limit (currently set to 10)
-5. Update result formatting in the mapping function
+2. Modify the `execute` function to change behavior
+3. Adjust the `results` limit (currently set to 10)
+4. Update result formatting in the mapping function
 
 ## License
 

@@ -6,26 +6,26 @@
 searxng-tool/
 ├── .opencode/
 │   └── tool/
-│       └── searxng-search.ts           152 lines  - Main tool implementation
+│       └── searxng-search.ts           184 lines  - Main tool implementation
 ├── .gitignore                           34 lines  - Git configuration
+├── OPENCODE_INSTALLATION.md            383 lines  - End-user OpenCode setup guide
 ├── package.json                         24 lines  - NPM dependencies
 ├── tsconfig.json                        20 lines  - TypeScript configuration
-├── test-tool.ts                        104 lines  - Test script
+├── test-tool.ts                        113 lines  - Test script
 ├── README.md                           309 lines  - Main documentation
-├── QUICKSTART.md                       146 lines  - 5-minute setup guide
-├── INTEGRATION_GUIDE.md                332 lines  - Integration instructions
+├── QUICKSTART.md                       148 lines  - 5-minute setup guide
+├── INTEGRATION_GUIDE.md                333 lines  - Integration instructions
 ├── PROJECT_SUMMARY.md                  385 lines  - Complete overview
-├── VERIFICATION.md                     255 lines  - Verification checklist
 └── FILES.md                              -        - This file
 
-TOTAL: 1,761 lines of code and documentation across 11 files
+TOTAL: 2,326 lines of code and documentation across 11 files
 ```
 
 ## File Descriptions
 
 ### Core Implementation
 
-#### `.opencode/tool/searxng-search.ts` (152 lines)
+#### `.opencode/tool/searxng-search.ts` (184 lines)
 **Type**: TypeScript Tool Implementation
 **Purpose**: Main tool definition for OpenCode
 **Key Features**:
@@ -44,8 +44,8 @@ TOTAL: 1,761 lines of code and documentation across 11 files
 - `fetch()` - HTTP requests to SearXNG
 
 **Configuration**:
-- Service URL: http://searxng.vier.services/search
-- Timeout: 10 seconds
+- Service URL: `SEARXNG_URL` env var (fallback: `http://searxng.vier.services`)
+- Timeout: AbortController + 10-second setTimeout
 - Result Limit: 10
 - Output Formats: JSON + Text
 
@@ -66,7 +66,7 @@ TOTAL: 1,761 lines of code and documentation across 11 files
   - Zod (latest)
   - @types/node (latest)
 
-**Usage**: `npm install` to set up the environment
+**Usage**: `cd .opencode && npm install` to set up the environment
 
 ---
 
@@ -78,7 +78,7 @@ TOTAL: 1,761 lines of code and documentation across 11 files
 - Module: ESNext
 - Lib: ES2020
 - Strict mode: enabled
-- Module resolution: node
+- Module resolution: bundler
 - Source map generation: enabled
 - Output directory: ./dist
 
@@ -129,7 +129,7 @@ TOTAL: 1,761 lines of code and documentation across 11 files
 
 ---
 
-#### `QUICKSTART.md` (146 lines)
+#### `QUICKSTART.md` (148 lines)
 **Type**: Quick Start Guide
 **Sections**:
 1. **Installation** - 3-step setup
@@ -147,7 +147,7 @@ TOTAL: 1,761 lines of code and documentation across 11 files
 
 ---
 
-#### `INTEGRATION_GUIDE.md` (332 lines)
+#### `INTEGRATION_GUIDE.md` (333 lines)
 **Type**: Integration and Configuration Guide
 **Sections**:
 1. **Installation Steps** - Detailed installation
@@ -195,30 +195,20 @@ TOTAL: 1,761 lines of code and documentation across 11 files
 
 ---
 
-#### `VERIFICATION.md` (255 lines)
-**Type**: Verification Checklist
-**Sections**:
-1. **Project Files** - File listing
-2. **File Contents Verification** - Content checks
-3. **Feature Verification** - Feature completeness
-4. **Testing** - Testing readiness
-5. **Code Quality** - Code standards
-6. **Documentation Quality** - Documentation completeness
-7. **Deployment Readiness** - Production readiness
-8. **Security Review** - Security validation
-9. **Performance Considerations** - Performance review
-10. **Integration with OpenCode** - OpenCode compatibility
-11. **Final Verification** - Overall status
-12. **Next Steps** - Deployment steps
-
-**Target Audience**: QA and deployment teams
-**Purpose**: Verify tool is production-ready
+#### `OPENCODE_INSTALLATION.md` (383 lines)
+**Type**: End-User Installation Guide
+**Purpose**: Complete setup and usage guide for OpenCode users
+**Highlights**:
+- Project and global installation paths
+- Dependency installation inside `.opencode/`
+- Environment setup and troubleshooting
+- Upgrade and maintenance guidance
 
 ---
 
 ### Test Files
 
-#### `test-tool.ts` (104 lines)
+#### `test-tool.ts` (113 lines)
 **Type**: TypeScript Test Script
 **Purpose**: Validate tool functionality
 **Features**:
@@ -246,22 +236,22 @@ TOTAL: 1,761 lines of code and documentation across 11 files
 ## File Statistics
 
 ### By Type
-- **TypeScript**: 2 files (256 lines)
-- **Markdown**: 5 files (1,427 lines)
-- **JSON**: 1 file (24 lines)
+- **TypeScript**: 2 files (297 lines)
+- **Markdown**: 6 files (1,951 lines)
+- **JSON**: 2 files (44 lines)
 - **Git Config**: 1 file (34 lines)
-- **Total**: 11 files (1,761 lines)
+- **Total**: 11 files (2,326 lines)
 
 ### By Category
-- **Code**: 3 files (176 lines)
-- **Configuration**: 2 files (54 lines)
-- **Documentation**: 6 files (1,531 lines)
+- **Code**: 2 files (297 lines)
+- **Configuration**: 3 files (78 lines)
+- **Documentation**: 6 files (1,951 lines)
 
 ### By Purpose
-- **Implementation**: 1 file (152 lines) - searxng-search.ts
+- **Implementation**: 1 file (184 lines) - searxng-search.ts
 - **Configuration**: 3 files (78 lines) - package.json, tsconfig.json, .gitignore
-- **Testing**: 1 file (104 lines) - test-tool.ts
-- **Documentation**: 6 files (1,449 lines) - All .md files
+- **Testing**: 1 file (113 lines) - test-tool.ts
+- **Documentation**: 6 files (1,951 lines) - All .md files
 
 ---
 
@@ -285,7 +275,7 @@ TOTAL: 1,761 lines of code and documentation across 11 files
 
 ### Production Deployment (1 hour)
 1. **INTEGRATION_GUIDE.md** - Deployment section
-2. **VERIFICATION.md** - Run through checklist
+2. **OPENCODE_INSTALLATION.md** - Run through setup checklist
 3. **PROJECT_SUMMARY.md** - Architecture review
 4. **Security Considerations** sections across docs
 
@@ -295,13 +285,11 @@ TOTAL: 1,761 lines of code and documentation across 11 files
 
 ### Service URL
 **File**: `.opencode/tool/searxng-search.ts`
-**Line**: ~62
-**Current**: `const searxngUrl = "http://searxng.vier.services/search"`
+**Current**: `const baseUrl = (process.env.SEARXNG_URL ?? "http://searxng.vier.services").replace(/\/$/, "")`
 
 ### Timeout Value
 **File**: `.opencode/tool/searxng-search.ts`
-**Line**: ~78
-**Current**: `timeout: 10000` (milliseconds)
+**Current**: `setTimeout(() => controller.abort(), 10000)`
 
 ### Result Limit
 **File**: `.opencode/tool/searxng-search.ts`
@@ -342,15 +330,12 @@ QUICKSTART.md
 
 INTEGRATION_GUIDE.md
   ├── References
-  │   ├── .opencode/tool/searxng-search.ts (configuration)
+  │   ├── SEARXNG_URL environment configuration
   │   ├── README.md (parameter reference)
   │   └── test-tool.ts (testing)
 
 PROJECT_SUMMARY.md
   └── References all files for complete overview
-
-VERIFICATION.md
-  └── Validates all files are present
 ```
 
 ---
@@ -364,12 +349,12 @@ START → QUICKSTART.md → README.md → Get Started
 
 ### For Installation
 ```
-QUICKSTART.md (Section 1-3) → npm install → Done
+QUICKSTART.md (Section 1-3) → cd .opencode && npm install → Done
 ```
 
 ### For Configuration
 ```
-INTEGRATION_GUIDE.md → Edit .opencode/tool/searxng-search.ts → Restart
+INTEGRATION_GUIDE.md → Set SEARXNG_URL → Restart
 ```
 
 ### For Troubleshooting
@@ -382,23 +367,16 @@ README.md (Troubleshooting) → INTEGRATION_GUIDE.md → Check logs
 PROJECT_SUMMARY.md → .opencode/tool/searxng-search.ts → tsconfig.json
 ```
 
-### For Verification
-```
-VERIFICATION.md → Check all boxes → Proceed with deployment
-```
-
----
-
 ## Total Project Metrics
 
 | Metric | Value |
 |--------|-------|
 | Total Files | 11 |
-| Total Lines | 1,761 |
-| Source Code Lines | 256 |
-| Documentation Lines | 1,431 |
-| Code to Doc Ratio | 1:5.6 |
-| Avg Lines per File | 160 |
+| Total Lines | 2,326 |
+| Source Code Lines | 297 |
+| Documentation Lines | 1,951 |
+| Code to Doc Ratio | 1:6.6 |
+| Avg Lines per File | 211 |
 
 ---
 
@@ -407,9 +385,9 @@ VERIFICATION.md → Check all boxes → Proceed with deployment
 - **Project Version**: 1.0.0
 - **Created**: December 15, 2024
 - **Status**: Production Ready
+- **Last Updated**: April 2025
 - **License**: MIT
 
 ---
 
 This file serves as a complete reference for all files in the SearXNG OpenCode Tool project.
-

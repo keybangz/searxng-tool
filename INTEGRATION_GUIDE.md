@@ -32,11 +32,9 @@ cp .opencode/tool/searxng-search.ts ~/.config/opencode/tool/
 ### 2. Install Dependencies
 
 ```bash
-npm install
+cd .opencode && npm install
 # or
-yarn install
-# or
-bun install
+cd .opencode && bun install
 ```
 
 ### 3. Verify Installation
@@ -79,10 +77,10 @@ http://searxng.vier.services
 
 To use a different SearXNG instance:
 
-1. Open `.opencode/tool/searxng-search.ts`
-2. Find the line: `const searxngUrl = "http://searxng.vier.services/search"`
-3. Replace with your instance URL: `const searxngUrl = "http://your-instance.com/search"`
-4. Save and restart OpenCode
+1. Set the `SEARXNG_URL` environment variable before launching OpenCode
+2. Example: `export SEARXNG_URL="https://your-instance.com"`
+3. Restart OpenCode so the tool reads the updated environment
+4. Verify with a test search query
 
 ### Testing Different Instances
 
@@ -164,7 +162,6 @@ A successful response will include:
 - Try again later (service may be under load)
 - Use a simpler query
 - Try a different SearXNG instance
-- Increase timeout in the tool code (change 10000 to higher value)
 
 ## Performance Optimization
 
@@ -184,13 +181,17 @@ A successful response will include:
 
 ## Advanced Configuration
 
-### Environment Variables (Optional Enhancement)
+### Environment Variables
 
-You can enhance the tool to support environment variables:
+The tool already supports environment-based instance configuration.
 
-```typescript
-const searxngUrl = process.env.SEARXNG_URL || "http://searxng.vier.services/search"
-const timeout = parseInt(process.env.SEARXNG_TIMEOUT || "10000")
+- `SEARXNG_URL`: Base URL for the SearXNG instance
+- Default fallback when unset: `http://searxng.vier.services`
+
+Set it before launching OpenCode:
+
+```bash
+export SEARXNG_URL="https://your-instance.example.com"
 ```
 
 ### Caching Implementation (Optional Enhancement)

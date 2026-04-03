@@ -12,7 +12,7 @@ interface SearXNGResponse {
     title: string
     url: string
     content: string
-    engine?: string[]
+    engine?: string | string[]
   }>
   number_of_results?: number
   query?: string
@@ -26,7 +26,8 @@ interface FormattedResponse {
 }
 
 export default tool({
-  description: "Search the internet using SearXNG service. Returns up to 10 web search results with titles, URLs, and snippets.",
+  description:
+    "Search the internet using SearXNG service. Returns up to 10 web search results with titles, URLs, and snippets. Configure the SearXNG instance via the SEARXNG_URL environment variable.",
   args: {
     query: tool.schema
       .string()
@@ -67,14 +68,14 @@ export default tool({
       safesearch,
     } = args
 
-    const searxngUrl = "http://searxng.vier.services/search"
+    const baseUrl = (process.env.SEARXNG_URL ?? "http://searxng.vier.services").replace(/\/$/, "")
+    const searxngUrl = baseUrl.endsWith("/search") ? baseUrl : `${baseUrl}/search`
 
     try {
       // Build query parameters
       const params = new URLSearchParams()
       params.append("q", query)
       params.append("format", "json")
-      params.append("results_on_new_tab", "0")
       params.append("pageno", pageno.toString())
 
       if (categories) params.append("categories", categories)
@@ -84,15 +85,23 @@ export default tool({
 
       const fullUrl = `${searxngUrl}?${params.toString()}`
 
-      // Make the API request
-      const response = await fetch(fullUrl, {
-        method: "GET",
-        headers: {
-          "User-Agent": "OpenCode-SearXNG-Tool/1.0",
-          Accept: "application/json",
-        },
-        timeout: 10000, // 10 second timeout
-      })
+      const controller = new AbortController()
+      const timeoutId = setTimeout(() => controller.abort(), 10000)
+
+      let response: Response
+      try {
+        // Make the API request
+        response = await fetch(fullUrl, {
+          method: "GET",
+          headers: {
+            "User-Agent": "OpenCode-SearXNG-Tool/1.0",
+            Accept: "application/json",
+          },
+          signal: controller.signal,
+        })
+      } finally {
+        clearTimeout(timeoutId)
+      }
 
       if (!response.ok) {
         throw new Error(
@@ -100,7 +109,15 @@ export default tool({
         )
       }
 
-      const data = (await response.json()) as SearXNGResponse
+      const text = await response.text()
+      let data: SearXNGResponse
+      try {
+        data = JSON.parse(text) as SearXNGResponse
+      } catch {
+        throw new Error(
+          `SearXNG returned non-JSON response (status ${response.status}). The instance may be rate-limiting or returning a captcha page.`
+        )
+      }
 
       // Extract and limit results to 10
       const limitedResults: SearchResult[] = (data.results || [])
@@ -109,7 +126,7 @@ export default tool({
           title: result.title,
           url: result.url,
           snippet: result.content,
-          engine: result.engine?.[0],
+          engine: Array.isArray(result.engine) ? result.engine[0] : result.engine,
         }))
 
       // Format results for human readability
@@ -134,6 +151,21 @@ export default tool({
 
       return JSON.stringify(response_data, null, 2)
     } catch (error) {
+      // Check for timeout (AbortController fires)
+      if (error instanceof Error && error.name === "AbortError") {
+        return JSON.stringify(
+          {
+            query,
+            error: true,
+            errorMessage: "Search request timed out after 10 seconds. The SearXNG instance may be slow or unavailable.",
+            results: [],
+            formattedResults: "Error: Search request timed out after 10 seconds.",
+          },
+          null,
+          2
+        )
+      }
+
       const errorMessage =
         error instanceof Error ? error.message : String(error)
       return JSON.stringify(
