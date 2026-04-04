@@ -30,6 +30,8 @@ docker compose run --rm -i reader-mcp
 Public internet (RFC-1918, loopback, link-local blocked)
 ```
 
+`reader-mcp` does not bind any network ports. It communicates exclusively over stdio — no network exposure whatsoever.
+
 ## SSRF security model
 
 reader-mcp implements post-DNS SSRF protection:
@@ -45,15 +47,33 @@ This closes the DNS-rebinding bypass that affects `mcp-searxng`'s `web_url_read`
 
 ## Installation
 
+### 1. Build the Docker image
+
+From the repo root:
+
 ```bash
-# 1. Generate lock file (required for Docker build)
-cd reader-mcp && npm install && cd ..
-
-# 2. Build and start
-docker compose up --build -d
-
-# 3. Add to opencode.json (see QUICKSTART.md)
+docker compose build reader-mcp
 ```
+
+This only needs to be run once (or after updating the repo).
+
+### 2. Add to opencode.json
+
+Add the following to the `mcp` object in `~/.config/opencode/opencode.json`. Replace `/path/to/searxng-tool` with the absolute path to your cloned repo (run `pwd` from the repo root to get it):
+
+```json
+"reader": {
+  "type": "local",
+  "command": ["docker", "compose", "--project-directory", "/path/to/searxng-tool", "run", "--rm", "-i", "reader-mcp"],
+  "enabled": true
+}
+```
+
+### 3. Restart OpenCode
+
+The `crawling_exa` tool will be available immediately.
+
+> **Note:** `reader-mcp` is invoked on-demand — there is no persistent container to manage. Each call to `crawling_exa` spins up a short-lived container, fetches the URL, and exits.
 
 ## Tool reference
 
@@ -79,8 +99,8 @@ The page is too large. Increase is not recommended — large pages indicate non-
 ### `HTTP 4xx / 5xx`
 The target server rejected the request. Check the URL or try in a browser.
 
-### Docker build fails: `package-lock.json not found`
-Run `cd reader-mcp && npm install` to generate the lock file before building.
+### `docker compose run` is slow on first call
+The image is already built, but container startup adds ~200-400ms. This is expected for stdio-based Docker MCP servers.
 
 ### Empty or poor markdown output
 The page likely requires JavaScript rendering. reader-mcp cannot help here — see Firecrawl for JS-heavy sites.

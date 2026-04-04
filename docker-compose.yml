@@ -20,7 +20,7 @@ services:
   reader-mcp:
     build: ./reader-mcp
     container_name: reader-mcp
-    restart: unless-stopped
+    restart: "no"
     stdin_open: true
     tty: false
     cap_drop:

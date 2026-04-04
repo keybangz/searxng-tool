@@ -50,14 +50,14 @@ Set up SearXNG-backed search in OpenCode in a few minutes.
    }
    ```
 
-   **Step 3b (Optional): URL-to-Markdown extraction**
+6. *(Optional)* Add reader-mcp for URL-to-markdown extraction:
 
    ```bash
-   cd reader-mcp && npm install && cd ..
-   docker compose up --build -d
+   # Build the reader-mcp image (only needed once)
+   docker compose build reader-mcp
    ```
 
-   Add this MCP entry to `opencode.json` (replace `/path/to/searxng-tool` with your actual path):
+   Then add this MCP entry to `opencode.json`:
 
    ```json
    "reader": {
@@ -67,9 +67,10 @@ Set up SearXNG-backed search in OpenCode in a few minutes.
    }
    ```
 
+   Run `pwd` in the repo root to get the correct absolute path.
    See [`docs/reader-mcp.md`](docs/reader-mcp.md) for full details.
 
-6. Restart OpenCode. The `searxng-search` tool should now be available.
+7. Restart OpenCode. Test `searxng-search` and (if installed) `crawling_exa`.
 
 ---
 
@@ -109,3 +110,9 @@ Success looks like:
 - At least one result containing `title`, `url`, and `snippet`
 
 If it fails, see `README.md` troubleshooting and `docs/architecture-proposal.md`.
+
+To verify `crawling_exa` (if reader-mcp was set up):
+
+Ask: "Use crawling_exa to fetch the content of https://example.com"
+
+Success: returns clean markdown of the example.com page.
