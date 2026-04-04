@@ -1,309 +1,164 @@
-# SearXNG OpenCode Tool
+# searxng-tool
 
-A custom OpenCode tool that enables AI agents to search the internet using the SearXNG service. This tool integrates with a SearXNG instance for privacy-focused, decentralized web search capabilities.
+SearXNG-backed web search for OpenCode AI agents.
 
-## Features
+This repository supports two integration paths:
+- **MCP server (recommended):** OpenCode connects to `mcp-searxng` over stdio, usually backed by a local self-hosted SearXNG instance.
+- **Legacy custom tool (still functional):** a TypeScript OpenCode tool file (`.opencode/tool/searxng-search.ts`) using `@opencode-ai/plugin@1.3.13`.
 
-- **Privacy-Focused Search**: Uses SearXNG, a metasearch engine that doesn't track users
-- **AI Agent Optimized**: Returns structured JSON data that LLMs can easily parse and understand
-- **Human-Readable Output**: Includes formatted results for debugging and manual inspection
-- **Flexible Parameters**: Support for language, categories, time range filtering, and safe search options
-- **Error Handling**: Graceful error messages when searches fail
-- **Result Limiting**: Automatically limits to 10 most relevant results per query
+---
 
-## Installation
+## What this project does
 
-This tool is designed to be used with OpenCode. Place the `.opencode/` directory in your OpenCode project root:
+`searxng-tool` gives agents a search tool named **`searxng-search`** that returns web results as structured JSON (title, URL, snippet, engine, plus formatted text).
 
-```bash
-# Copy this entire directory structure into your OpenCode project
-cp -r .opencode ~/.opencode/tool/
-# or if using a project-specific .opencode directory
-cp -r .opencode /path/to/your/opencode-project/.opencode/
+Use it when you want agent-accessible search with SearXNG rather than direct calls to commercial search APIs.
+
+---
+
+## Integration options
+
+## 1) MCP approach (recommended)
+
+For new setups, use OpenCode MCP config + `mcp-searxng@0.10.1`.
+
+### Components
+- `docker-compose.yml` at repository root: runs a local SearXNG service (bound to `127.0.0.1:8080`)
+- `npx -y mcp-searxng@0.10.1`: stdio MCP server process
+- OpenCode MCP config in `opencode.json`
+
+### OpenCode MCP block
+
+```json
+"searxng": {
+  "type": "local",
+  "command": ["npx", "-y", "mcp-searxng@0.10.1"],
+  "environment": { "SEARXNG_URL": "http://localhost:8080" },
+  "enabled": true
+}
 ```
 
-Then install dependencies:
+### First-run requirement
+Before starting SearXNG the first time, generate and set a secret:
 
 ```bash
-cd .opencode && npm install
+openssl rand -hex 32
 ```
 
-## Usage
+Paste it into `searxng/settings.yml` under `server.secret_key`.
 
-### Basic Search
+---
 
-The tool is called `searxng-search` and accepts the following parameters:
+## 2) Legacy custom tool approach
+
+Still supported for existing OpenCode custom-tool setups.
+
+### Tool file
+- Path in this repo: `.opencode/tool/searxng-search.ts`
+
+### Runtime dependency
+- `@opencode-ai/plugin@1.3.13`
+
+### Install modes
+- **Global install:** copy `searxng-search.ts` to `~/.config/opencode/tools/` (**plural `tools` is required**)
+- **Project install:** place it in `<project-root>/.opencode/tool/`
+
+Then install dependencies inside `.opencode/`:
+
+```bash
+cd .opencode
+npm install
+```
+
+### Default backend URL
+If `SEARXNG_URL` is not set, the legacy tool defaults to:
+
+```text
+https://search.rhscz.eu
+```
+
+---
+
+## Tool interface
+
+Both approaches expose the same search parameters:
 
 | Parameter | Type | Required | Description |
-|-----------|------|----------|-------------|
-| `query` | string | Yes | The search query (e.g., "OpenCode documentation") |
-| `categories` | string | No | Comma-separated list of categories (e.g., "general,social media") |
-| `language` | string | No | Language code (e.g., "en", "de", "fr") |
+|---|---|---|---|
+| `query` | string | Yes | Search query |
+| `categories` | string | No | Comma-separated categories |
+| `language` | string | No | Language code (for example `en`, `de`) |
 | `pageno` | number | No | Page number (default: 1) |
-| `time_range` | enum | No | Filter by: "day", "month", or "year" |
-| `safesearch` | number | No | Safe search level: 0 (off), 1 (moderate), 2 (strict) |
+| `time_range` | enum | No | `day`, `month`, or `year` |
+| `safesearch` | number | No | `0` (off), `1` (moderate), `2` (strict) |
 
-### Agent Usage Example
+---
 
-When used by an OpenCode agent, the tool returns JSON with the following structure:
+## Example response structure
+
+Typical `searxng-search` output:
 
 ```json
 {
-  "query": "OpenCode tool creation",
-  "resultsFound": 1250,
+  "query": "opencode mcp configuration",
+  "resultsFound": 237,
   "results": [
     {
-      "title": "Custom Tools | OpenCode",
-      "url": "https://opencode.ai/docs/custom-tools/",
-      "snippet": "Create tools the LLM can call in opencode...",
+      "title": "OpenCode MCP docs",
+      "url": "https://example.com/docs/opencode/mcp",
+      "snippet": "How to configure local MCP servers in OpenCode...",
       "engine": "duckduckgo"
     }
   ],
-  "formattedResults": "1. Custom Tools | OpenCode\n   URL: https://opencode.ai/docs/custom-tools/\n   Create tools the LLM can call in opencode..."
+  "formattedResults": "1. OpenCode MCP docs\\n   URL: https://example.com/docs/opencode/mcp\\n   How to configure local MCP servers in OpenCode..."
 }
 ```
 
-The response includes:
-- **query**: The search query that was executed
-- **resultsFound**: Total number of results found (if available)
-- **results**: Array of up to 10 search results with structured data
-  - **title**: Page title
-  - **url**: Direct URL to the result
-  - **snippet**: Brief text snippet from the page
-  - **engine**: Search engine that returned this result (e.g., Google, DuckDuckGo)
-- **formattedResults**: Human-readable text formatting of the results
+Fields:
+- `query`: executed query
+- `resultsFound`: total result count if available
+- `results`: up to 10 structured results
+- `formattedResults`: plain-text rendering useful for logs/debugging
 
-### Error Handling
+---
 
-If a search fails, the tool returns an error response:
+## Security note
 
-```json
-{
-  "query": "your search query",
-  "error": true,
-  "errorMessage": "Failed to search SearXNG: <error details>",
-  "results": [],
-  "formattedResults": "Error: <error details>"
-}
-```
+`mcp-searxng` includes additional MCP tools such as `web_url_read`.
 
-## Configuration
+- In this project, run MCP as a **local stdio-only** server from OpenCode.
+- `web_url_read` can introduce **SSRF risk** if exposed in less-trusted networked deployments.
+- For threat model, mitigations, and deployment guidance, read **`docs/architecture-proposal.md` §8**.
 
-Set the `SEARXNG_URL` environment variable to configure which SearXNG instance to use:
-
-```bash
-export SEARXNG_URL="https://your-instance.example.com"
-```
-
-If `SEARXNG_URL` is not set, the tool falls back to:
-```
-http://searxng.vier.services
-```
-
-## Search Tips
-
-### Effective Queries
-- Use specific keywords: `"machine learning algorithms"` instead of `"machine learning"`
-- Combine terms for narrower results: `site:github.com Python testing`
-- Use quotes for exact phrases: `"exact phrase search"`
-
-### Category Filtering
-Available categories vary by instance, but typically include:
-- `general` - General web search
-- `images` - Image search
-- `news` - News articles
-- `social media` - Social media results
-- `science` - Scientific resources
-- `IT` - IT/Technology resources
-
-### Language Support
-Specify language codes as ISO 639-1 (two-letter codes):
-- `en` - English
-- `de` - German
-- `fr` - French
-- `es` - Spanish
-- `zh` - Chinese
-- etc.
-
-### Time Range Filtering
-Limit results to a specific time period:
-- `day` - Last 24 hours
-- `month` - Last 30 days
-- `year` - Last year
-
-## API Response Details
-
-### Success Response
-```typescript
-{
-  query: string              // The search query
-  resultsFound: number       // Total results found
-  results: SearchResult[]    // Array of up to 10 results
-  formattedResults: string   // Human-readable formatted results
-}
-
-// SearchResult structure:
-{
-  title: string      // Page title
-  url: string        // Page URL
-  snippet: string    // Text snippet from page
-  engine?: string    // Source search engine
-}
-```
-
-### Error Response
-```typescript
-{
-  query: string              // The search query
-  error: true                // Error flag
-  errorMessage: string       // Detailed error message
-  results: []                // Empty results array
-  formattedResults: string   // Error message as text
-}
-```
-
-## Timeout Behavior
-
-The tool enforces a 10-second timeout using `AbortController` and `setTimeout`. If the search takes longer than 10 seconds, it aborts the request and returns an error message.
-
-## Rate Limiting
-
-The tool doesn't implement built-in rate limiting, but SearXNG may enforce its own rate limits. If you're making many searches, consider:
-- Spacing out requests by a few seconds
-- Using more specific queries to reduce needed searches
-- Caching results at the agent level if appropriate
-
-## Examples
-
-### Simple Web Search
-Agent query: "Search for information about React hooks"
-
-```bash
-searxng-search(query="React hooks")
-```
-
-### Search with Language Filter
-Agent query: "Search for Python documentation in German"
-
-```bash
-searxng-search(query="Python documentation", language="de")
-```
-
-### News Search with Time Filter
-Agent query: "Find recent news about artificial intelligence"
-
-```bash
-searxng-search(query="artificial intelligence news", time_range="week")
-```
-
-### Safe Search Enabled
-Agent query: "Find educational resources about cybersecurity"
-
-```bash
-searxng-search(query="cybersecurity education", safesearch=2)
-```
+---
 
 ## Troubleshooting
 
-### "Failed to connect" Error
-- Verify the SearXNG instance at `http://searxng.vier.services` is accessible
-- Check your network connection
-- Check firewall rules that might block the connection
+### Tool not showing in OpenCode
+- Confirm config location: `~/.config/opencode/opencode.json`
+- Restart OpenCode after config changes
+- For legacy mode, confirm path is `~/.config/opencode/tools/` (not `tool/`)
 
-### "HTTP 4xx/5xx Error"
-- Verify the query is properly formatted
-- Check if the SearXNG instance is running
-- Try a simpler query to test connectivity
+### MCP server starts but searches fail
+- Check SearXNG is running: `docker compose ps`
+- Verify URL in MCP environment: `SEARXNG_URL=http://localhost:8080`
+- Check container logs: `docker compose logs -f`
 
-### Empty Results
-- The query might be too specific or not match any documents
-- Try using fewer keywords
-- Check if the correct language is specified
+### Legacy tool fails to execute
+- Run dependency install in `.opencode/`: `npm install`
+- Ensure your configured `SEARXNG_URL` is reachable
+- If unset, it will use `https://search.rhscz.eu`
 
-### Timeout Errors
-- The SearXNG instance might be under heavy load
-- Try again in a few moments
-- Try a simpler query
+---
 
-## Architecture
+## Documentation map
 
-The tool is built as a TypeScript module that:
-1. Accepts search parameters from OpenCode agents
-2. Constructs a URL with query parameters for the SearXNG API
-3. Makes an HTTP GET request to the SearXNG service
-4. Parses the JSON response
-5. Limits results to 10 entries
-6. Formats results for both LLM processing and human reading
-7. Returns structured JSON with error handling
+- **5-minute setup:** [`QUICKSTART.md`](./QUICKSTART.md)
+- **Full OpenCode setup:** [`OPENCODE_INSTALLATION.md`](./OPENCODE_INSTALLATION.md)
+- **Architecture deep-dive:** [`docs/architecture-proposal.md`](./docs/architecture-proposal.md)
 
-## Performance
-
-- **Response Time**: Typically 1-3 seconds depending on query complexity
-- **Result Limit**: 10 results per query to keep responses concise
-- **Request Timeout**: 10 seconds
-- **Memory Usage**: Minimal - tool is stateless and doesn't cache results
-
-## Privacy Considerations
-
-SearXNG is a privacy-focused metasearch engine that:
-- Does not track users
-- Does not store search history
-- Aggregates results from multiple search engines
-- Provides user IP anonymization options
-
-This makes it ideal for AI agents that need to search the internet without creating tracking profiles.
-
-## Development
-
-### Project Structure
-```
-searxng-tool/
-├── .opencode/
-│   └── tool/
-│       └── searxng-search.ts       # Main tool implementation
-├── OPENCODE_INSTALLATION.md         # End-user OpenCode setup guide
-├── package.json                    # Dependencies
-├── tsconfig.json                   # TypeScript config
-└── README.md                       # This file
-```
-
-### Building
-```bash
-npm install
-tsc
-```
-
-### Modifying the Tool
-
-To customize the tool:
-
-1. Edit `.opencode/tool/searxng-search.ts`
-2. Modify the `execute` function to change behavior
-3. Adjust the `results` limit (currently set to 10)
-4. Update result formatting in the mapping function
+---
 
 ## License
 
-MIT
-
-## Contributing
-
-To contribute improvements:
-1. Fork this repository
-2. Create a feature branch
-3. Make your changes
-4. Test thoroughly
-5. Submit a pull request
-
-## Support
-
-For issues or questions:
-- Check the [OpenCode documentation](https://opencode.ai/docs/)
-- Visit the [OpenCode Discord community](https://opencode.ai/discord)
-- Report issues at [https://github.com/sst/opencode](https://github.com/sst/opencode/issues)
-
-## Related Resources
-
-- [OpenCode Custom Tools Documentation](https://opencode.ai/docs/custom-tools/)
-- [SearXNG Documentation](https://docs.searxng.org/)
-- [SearXNG Public Instances](https://searx.space/)
+Released under the **MIT License**.

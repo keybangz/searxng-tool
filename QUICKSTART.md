@@ -1,148 +1,79 @@
-# Quick Start Guide - SearXNG OpenCode Tool
+# Quickstart
 
-Get up and running with the SearXNG search tool in 5 minutes!
+Set up SearXNG-backed search in OpenCode in a few minutes.
 
-## Installation
+## Option A: MCP (recommended)
 
-### 1. Copy the Tool
+1. Install Docker and Docker Compose  
+   https://docs.docker.com/get-docker/
 
-Copy the `.opencode/tool/searxng-search.ts` file to your OpenCode project:
+2. Generate a SearXNG secret key:
 
-```bash
-cp -r .opencode /path/to/your/opencode-project/
+   ```bash
+   openssl rand -hex 32
+   ```
+
+   Paste the output into `searxng/settings.yml` under:
+
+   ```yaml
+   server:
+     secret_key: "<paste-generated-key>"
+   ```
+
+3. Start SearXNG:
+
+   ```bash
+   docker compose up -d
+   ```
+
+4. Add this MCP block to `~/.config/opencode/opencode.json`:
+
+   ```json
+   "searxng": {
+     "type": "local",
+     "command": ["npx", "-y", "mcp-searxng@0.10.1"],
+     "environment": { "SEARXNG_URL": "http://localhost:8080" },
+     "enabled": true
+   }
+   ```
+
+5. Restart OpenCode. The `searxng-search` tool should now be available.
+
+---
+
+## Option B: Legacy custom tool
+
+1. Copy the tool file to global OpenCode tools directory (**plural**):
+
+   ```bash
+   cp .opencode/tool/searxng-search.ts ~/.config/opencode/tools/
+   ```
+
+2. Install dependencies:
+
+   ```bash
+   cd ~/.config/opencode
+   npm install
+   ```
+
+3. Restart OpenCode.
+
+4. Optional: point to a custom SearXNG instance by setting `SEARXNG_URL`.  
+   Default if unset: `https://search.rhscz.eu`
+
+---
+
+## Verify it works
+
+Ask an OpenCode agent:
+
+```text
+Search for "SearXNG documentation" using searxng-search.
 ```
 
-Or globally:
-```bash
-cp .opencode/tool/searxng-search.ts ~/.config/opencode/tool/
-```
+Success looks like:
+- Tool call to `searxng-search`
+- JSON response with `query`, `results`, and `formattedResults`
+- At least one result containing `title`, `url`, and `snippet`
 
-### 2. Install Dependencies
-
-```bash
-cd .opencode && npm install
-# or
-cd .opencode && bun install
-```
-
-### 3. Restart OpenCode
-
-Close and reopen OpenCode. The tool will be automatically available.
-
-## First Search
-
-### Using OpenCode CLI
-
-Tell an agent to search:
-
-```
-You: "Search for information about OpenCode"
-OpenCode: (uses searxng-search tool to find results)
-```
-
-### Tool Parameters
-
-Basic usage:
-```javascript
-searxng-search({
-  query: "Your search query"
-})
-```
-
-With options:
-```javascript
-searxng-search({
-  query: "machine learning",
-  language: "en",
-  safesearch: 1,
-  time_range: "month"
-})
-```
-
-## Common Queries
-
-### Simple Search
-```
-"Search for TypeScript documentation"
-→ searxng-search(query="TypeScript documentation")
-```
-
-### Search with Language
-```
-"Find Python tutorials in Spanish"
-→ searxng-search(query="Python tutorials", language="es")
-```
-
-### Recent News
-```
-"Find recent news about AI"
-→ searxng-search(query="AI news", time_range="week")
-```
-
-### Safe Search
-```
-"Find educational resources about cybersecurity"
-→ searxng-search(query="cybersecurity education", safesearch=2)
-```
-
-## Response Format
-
-You'll get results like this:
-
-```json
-{
-  "query": "OpenCode",
-  "resultsFound": 1500,
-  "results": [
-    {
-      "title": "OpenCode - AI Coding Assistant",
-      "url": "https://opencode.ai",
-      "snippet": "OpenCode is an AI-powered coding assistant...",
-      "engine": "duckduckgo"
-    }
-  ],
-  "formattedResults": "1. OpenCode - AI Coding Assistant\n   URL: https://opencode.ai\n   OpenCode is an AI-powered..."
-}
-```
-
-## Troubleshooting
-
-### Tool Not Working?
-
-1. Check that `.opencode/tool/searxng-search.ts` exists
-2. Run `cd .opencode && npm install`
-3. Restart OpenCode
-4. Check that no firewall is blocking `http://searxng.vier.services`, or set `SEARXNG_URL` to a reachable instance
-
-### Getting No Results?
-
-- Try a simpler query
-- Check the language setting
-- Try without time_range filter
-
-### Connection Error?
-
-- Verify the SearXNG service is accessible
-- Try a different query
-- Check your network connection
-
-## Next Steps
-
-- Read the full [README.md](README.md) for complete documentation
-- Check [INTEGRATION_GUIDE.md](INTEGRATION_GUIDE.md) for advanced setup
-- Learn about [OpenCode custom tools](https://opencode.ai/docs/custom-tools/)
-
-## Parameters Reference
-
-| Parameter | Type | Default | Example |
-|-----------|------|---------|---------|
-| `query` | string | required | "Python" |
-| `language` | string | service default | "en", "de" |
-| `categories` | string | all | "general,news" |
-| `time_range` | string | none | "day", "month", "year" |
-| `safesearch` | number | service default | 0, 1, or 2 |
-| `pageno` | number | 1 | 2, 3, etc. |
-
-## Enjoy!
-
-You now have internet search capabilities in OpenCode. Let agents research information, find documentation, and discover solutions!
+If it fails, see `README.md` troubleshooting and `docs/architecture-proposal.md`.

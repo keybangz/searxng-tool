@@ -233,13 +233,13 @@ Use this when you want the tool everywhere.
 1. Create global tool directory:
 
 ```bash
-mkdir -p ~/.config/opencode/tool
+mkdir -p ~/.config/opencode/tools
 ```
 
 2. Copy the tool file there:
 
 ```bash
-cp /path/to/searxng-tool/.opencode/tool/searxng-search.ts ~/.config/opencode/tool/
+cp /path/to/searxng-tool/.opencode/tool/searxng-search.ts ~/.config/opencode/tools/
 ```
 
 3. Ensure a dependency file exists in `~/.config/opencode/` and install deps there:
@@ -258,16 +258,14 @@ npm install
 # or: bun install
 ```
 
-OpenCode auto-loads from `~/.config/opencode/tool/`.
-
-> Both singular `tool/` and plural `tools/` directories are supported for compatibility.
+OpenCode auto-loads from `~/.config/opencode/tools/`.
 
 ### C) Point to a different SearXNG instance
 
 By default, this tool uses:
 
 ```text
-http://searxng.vier.services
+https://search.rhscz.eu
 ```
 
 Override it with `SEARXNG_URL`:
@@ -296,6 +294,12 @@ Use the searxng-search tool to search: "OpenCode /init command"
 If you get search results (titles/URLs/snippets), setup is successful.
 
 ---
+
+## 5b) MCP-based SearXNG (recommended for new setups)
+
+The project also ships a fully self-hosted MCP architecture using Docker Compose + the `mcp-searxng` MCP server. This approach is more portable, reusable across projects, and doesn't require copying tool files.
+
+See [docs/architecture-proposal.md](docs/architecture-proposal.md) for the full design and setup instructions.
 
 ## 6) Quick reference
 

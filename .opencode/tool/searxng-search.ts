@@ -68,7 +68,7 @@ export default tool({
       safesearch,
     } = args
 
-    const baseUrl = (process.env.SEARXNG_URL ?? "http://searxng.vier.services").replace(/\/$/, "")
+    const baseUrl = (process.env.SEARXNG_URL ?? "https://search.rhscz.eu").replace(/\/$/, "")
     const searxngUrl = baseUrl.endsWith("/search") ? baseUrl : `${baseUrl}/search`
 
     try {
