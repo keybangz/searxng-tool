@@ -23,7 +23,7 @@ Use it when you want agent-accessible search with SearXNG rather than direct cal
 For new setups, use OpenCode MCP config + `mcp-searxng@0.10.1`.
 
 ### Components
-- `docker-compose.yml` at repository root: runs a local SearXNG service (bound to `127.0.0.1:8080`)
+- `docker-compose.yml` at repository root: runs a local SearXNG service (bound to `127.0.0.1:7790`)
 - `npx -y mcp-searxng@0.10.1`: stdio MCP server process
 - OpenCode MCP config in `opencode.json`
 
@@ -33,7 +33,7 @@ For new setups, use OpenCode MCP config + `mcp-searxng@0.10.1`.
 "searxng": {
   "type": "local",
   "command": ["npx", "-y", "mcp-searxng@0.10.1"],
-  "environment": { "SEARXNG_URL": "http://localhost:8080" },
+  "environment": { "SEARXNG_URL": "http://localhost:7790" },
   "enabled": true
 }
 ```
@@ -141,7 +141,7 @@ Fields:
 
 ### MCP server starts but searches fail
 - Check SearXNG is running: `docker compose ps`
-- Verify URL in MCP environment: `SEARXNG_URL=http://localhost:8080`
+- Verify URL in MCP environment: `SEARXNG_URL=http://localhost:7790`
 - Check container logs: `docker compose logs -f`
 
 ### Legacy tool fails to execute

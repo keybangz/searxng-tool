@@ -86,7 +86,7 @@ services:
     image: searxng/searxng:latest
     container_name: searxng
     ports:
-      - "127.0.0.1:8080:8080"
+      - "127.0.0.1:7790:8080"
     volumes:
       - ./searxng/settings.yml:/etc/searxng/settings.yml:ro
       - searxng-data:/etc/searxng
@@ -126,7 +126,7 @@ search:
 
 ```bash
 docker compose up -d
-curl "http://localhost:8080/search?q=test&format=json" | jq '.results[0]'
+curl "http://localhost:7790/search?q=test&format=json" | jq '.results[0]'
 ```
 
 ---
@@ -144,7 +144,7 @@ Add the `"mcp"` block to `~/.config/opencode/opencode.json` (global) or your pro
       "type": "local",
       "command": ["npx", "-y", "mcp-searxng@0.10.1"],
       "environment": {
-        "SEARXNG_URL": "http://localhost:8080"
+        "SEARXNG_URL": "http://localhost:7790"
       },
       "enabled": true
     }
@@ -163,7 +163,7 @@ Add the `"mcp"` block to `~/.config/opencode/opencode.json` (global) or your pro
       "type": "local",
       "command": ["node", "./mcp-server/dist/index.js"],
       "env": {
-        "SEARXNG_URL": "http://localhost:8080"
+        "SEARXNG_URL": "http://localhost:7790"
       },
       "enabled": true
     }
@@ -206,7 +206,7 @@ Add the `"mcp"` block to `~/.config/opencode/opencode.json` (global) or your pro
 1. Add `docker-compose.yml` to the repo
 2. Add `searxng/settings.yml` with JSON format and limiter disabled
 3. Start the service: `docker compose up -d`
-4. Verify: `curl "http://localhost:8080/search?q=test&format=json"`
+4. Verify: `curl "http://localhost:7790/search?q=test&format=json"`
 
 ### Phase 2 — Wire OpenCode to MCP
 
@@ -251,7 +251,7 @@ Developer / AI Client
      HTTP JSON (?format=json)
         |
         v
- Self-hosted SearXNG (Docker, :8080)
+ Self-hosted SearXNG (Docker, :7790)
         |
         v
  External search providers

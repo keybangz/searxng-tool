@@ -45,7 +45,7 @@ Set up SearXNG-backed search in OpenCode in a few minutes.
    "searxng": {
      "type": "local",
      "command": ["npx", "-y", "mcp-searxng@0.10.1"],
-     "environment": { "SEARXNG_URL": "http://localhost:8080" },
+     "environment": { "SEARXNG_URL": "http://localhost:7790" },
      "enabled": true
    }
    ```
