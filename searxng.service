@@ -1,8 +1,6 @@
 [Unit]
 Description=SearXNG self-hosted search (MCP backend)
 Documentation=https://github.com/searxng/searxng-docker
-After=docker.service
-Requires=docker.service
 
 [Service]
 Type=oneshot
