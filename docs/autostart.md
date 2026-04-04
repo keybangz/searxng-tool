@@ -60,11 +60,14 @@ docker ps | grep searxng
 
 ## Updating the project path
 
-The unit file uses `WorkingDirectory=%h/Github/searxng-tool` where `%h` expands to your home directory. If you cloned the repo elsewhere, edit the unit file before copying:
+The unit file uses `WorkingDirectory=%h/Github/searxng-tool` where `%h` expands to your home directory at runtime. If you cloned the repo elsewhere, edit the unit file before copying:
 
 ```bash
-# Example: if cloned to ~/projects/searxng-tool
+# Example: cloned to ~/projects/searxng-tool
 sed -i 's|%h/Github/searxng-tool|%h/projects/searxng-tool|' searxng.service
+
+# Example: cloned outside $HOME (e.g. a separate drive)
+sed -i 's|%h/Github/searxng-tool|/mnt/data/searxng-tool|' searxng.service
 ```
 
 Then re-copy and reload:
@@ -101,6 +104,7 @@ Common causes:
 - Docker daemon not running — start it with `sudo systemctl start docker`
 - Your user is not in the `docker` group — fix with `sudo usermod -aG docker $USER` then log out/in
 - Wrong `WorkingDirectory` — check the path exists and contains `docker-compose.yml`
+- Repo cloned outside your home directory — `%h` expands to `$HOME`, so if the repo lives elsewhere (e.g. a separate drive), edit `WorkingDirectory` to an absolute path before copying the unit file, then re-run `daemon-reload`
 
 ### lingering (service doesn't start on boot, only on login)
 
