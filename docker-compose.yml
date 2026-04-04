@@ -17,5 +17,19 @@ services:
       - SETGID
       - SETUID
 
+  reader-mcp:
+    build: ./reader-mcp
+    container_name: reader-mcp
+    restart: unless-stopped
+    stdin_open: true
+    tty: false
+    cap_drop:
+      - ALL
+    read_only: true
+    tmpfs:
+      - /tmp
+    security_opt:
+      - no-new-privileges:true
+
 volumes:
   searxng-data:

@@ -1,0 +1,16 @@
+{
+  "name": "reader-mcp",
+  "version": "1.0.0",
+  "description": "Lightweight URL-to-markdown MCP server with SSRF mitigations",
+  "type": "module",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.29.0",
+    "@mozilla/readability": "^0.6.0",
+    "jsdom": "^26.0.0",
+    "turndown": "^7.2.0"
+  }
+}
