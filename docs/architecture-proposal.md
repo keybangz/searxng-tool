@@ -333,3 +333,28 @@ A TOCTOU window exists between `dns.lookup()` and Node's internal resolver used 
 - No JavaScript rendering — SPAs return incomplete content
 - No subpage crawling
 - Firecrawl (self-hosted) is the documented upgrade path if JS rendering is required
+
+## §11 — Full Local MCP Stack
+
+The current OpenCode MCP setup is local-first and self-hostable where possible.
+
+| MCP name | Package / runtime | Purpose | Notes |
+|---|---|---|---|
+| `searxng` | `mcp-searxng@0.10.1` | Web search via local SearXNG | Runs over stdio; points to local SearXNG URL |
+| `reader` | Docker `reader-mcp` (this repo) | URL-to-markdown extraction | Exposes `crawling_exa`-compatible tool; SSRF-hardened design |
+| `docs-mcp-server` | `@arabold/docs-mcp-server@latest` | Library docs search/retrieval | Local scrape-first docs index; replaces cloud docs lookup workflows |
+| `github` | Remote (GitHub Copilot MCP) | GitHub operations | Managed remote MCP integration |
+| `playwright` | `@playwright/mcp@latest` | Browser automation | Interactive browser/task automation tools |
+| `memory` | `@modelcontextprotocol/server-memory` | Persistent knowledge graph | Writes local JSONL store (for example `~/.config/opencode/memory.jsonl`) |
+| `filesystem` | `@modelcontextprotocol/server-filesystem` | Scoped file read/write | Startup fails if any configured directory path is missing |
+
+### Why `exa` and `context7` were removed
+
+- Both were cloud-dependent MCP integrations that required API keys.
+- The stack now prioritizes local/self-hosted components for privacy, portability, and lower external dependency.
+- `docs-mcp-server` provides an offline scrape/index path for library docs, reducing need for cloud docs MCPs.
+
+### What `memory` and `filesystem` add
+
+- `memory` adds cross-session continuity through a local knowledge graph store.
+- `filesystem` adds controlled local file operations across explicitly scoped directories (workspace/config paths).

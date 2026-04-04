@@ -299,6 +299,8 @@ If you get search results (titles/URLs/snippets), setup is successful.
 
 The project also ships a fully self-hosted MCP architecture using Docker Compose + the `mcp-searxng` MCP server. This approach is more portable, reusable across projects, and doesn't require copying tool files.
 
+> MCP stack update: legacy cloud MCPs `exa` and `context7` have been removed from the default setup in favor of local/self-hosted alternatives (`searxng`, `reader`, and `docs-mcp-server`).
+
 See [docs/architecture-proposal.md](docs/architecture-proposal.md) for the full design and setup instructions.
 
 ## 5c) URL-to-Markdown MCP (reader-mcp)
@@ -316,6 +318,67 @@ Add this MCP entry to `opencode.json` (replace `/path/to/searxng-tool` with your
 ```
 
 Full setup, SSRF model, and tool API: [docs/reader-mcp.md](docs/reader-mcp.md).
+
+## 5d) Additional recommended MCPs
+
+These MCPs complete a practical local-first stack for day-to-day coding workflows.
+
+### `memory` MCP (`@modelcontextprotocol/server-memory`)
+
+Purpose:
+
+- Provides a persistent local knowledge graph MCP
+- Lets agents store/retrieve entities, relations, and observations across sessions
+
+Example `opencode.json` entry:
+
+```json
+"memory": {
+  "type": "local",
+  "command": ["bunx", "-y", "@modelcontextprotocol/server-memory"],
+  "environment": {
+    "MEMORY_FILE_PATH": "/home/<user>/.config/opencode/memory.jsonl"
+  },
+  "enabled": true
+}
+```
+
+Notes:
+
+- `MEMORY_FILE_PATH` should point to `~/.config/opencode/memory.jsonl`
+- Create the parent directory first if needed:
+
+```bash
+mkdir -p ~/.config/opencode
+```
+
+### `filesystem` MCP (`@modelcontextprotocol/server-filesystem`)
+
+Purpose:
+
+- Exposes scoped local file read/write tools to agents
+- Useful for controlled access to selected workspace/config paths
+
+Example `opencode.json` entry:
+
+```json
+"filesystem": {
+  "type": "local",
+  "command": [
+    "bunx",
+    "-y",
+    "@modelcontextprotocol/server-filesystem",
+    "/mnt/extra_ssd/Github",
+    "/home/<user>/.config/opencode"
+  ],
+  "enabled": true
+}
+```
+
+Important gotcha:
+
+- `server-filesystem` exits immediately if **any** declared directory does not exist at startup.
+- Verify/create all paths before launching OpenCode.
 
 ## 6) Quick reference
 
@@ -397,6 +460,14 @@ curl -I "$SEARXNG_URL"
 - Built-in `websearch` uses Exa AI and may need `OPENCODE_ENABLE_EXA=1`
 - This SearXNG custom tool is separate and does **not** need Exa env vars or API keys
 - If you only want SearXNG, just install the custom tool and use it explicitly
+
+### 7) MCP server connection closes immediately (`-32000`)
+
+- Most commonly caused by `@modelcontextprotocol/server-filesystem` failing during startup
+- The server exits if one or more declared directory arguments do not exist
+- Fix either by:
+  - Removing missing directories from the `filesystem` MCP command args, or
+  - Creating the missing directories before launching OpenCode
 
 ---
 
