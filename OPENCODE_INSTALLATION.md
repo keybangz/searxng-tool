@@ -301,6 +301,22 @@ The project also ships a fully self-hosted MCP architecture using Docker Compose
 
 See [docs/architecture-proposal.md](docs/architecture-proposal.md) for the full design and setup instructions.
 
+## 5c) URL-to-Markdown MCP (reader-mcp)
+
+`reader-mcp` adds Exa-compatible URL-to-markdown extraction via the `crawling_exa` tool, so agents can fetch and clean full page content (not just keyword search results).
+
+Add this MCP entry to `opencode.json` (replace `/path/to/searxng-tool` with your real local path):
+
+```json
+"reader": {
+  "type": "local",
+  "command": ["docker", "compose", "--project-directory", "/path/to/searxng-tool", "run", "--rm", "-i", "reader-mcp"],
+  "enabled": true
+}
+```
+
+Full setup, SSRF model, and tool API: [docs/reader-mcp.md](docs/reader-mcp.md).
+
 ## 6) Quick reference
 
 ### TUI commands

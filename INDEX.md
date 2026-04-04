@@ -9,3 +9,4 @@ This project provides SearXNG search tooling and documentation for both modern M
 | [`OPENCODE_INSTALLATION.md`](OPENCODE_INSTALLATION.md)           | Full OpenCode install + configuration guide                              |
 | [`docs/autostart.md`](docs/autostart.md)                         | Systemd (Linux) and Launch Agent (macOS) autostart setup                 |
 | [`docs/architecture-proposal.md`](docs/architecture-proposal.md) | MCP architecture design + security audit                                 |
+| [`docs/reader-mcp.md`](docs/reader-mcp.md)                       | reader-mcp reference: URL-to-markdown, SSRF model, tool API             |

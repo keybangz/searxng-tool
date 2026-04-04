@@ -306,3 +306,30 @@ The MCP approach is the correct target architecture. It replaces a project-speci
 1. Self-host SearXNG via Docker Compose
 2. Connect OpenCode via stdio MCP using `mcp-searxng` (Option A)
 3. Upgrade to a custom MCP server (Option B) only if feature pressure justifies it
+
+## §10 — Exa Gap: URL-to-Markdown Extraction
+
+### Gap analysis
+SearXNG provides keyword-based web search but cannot fetch and clean page content. Exa's `crawling_exa` tool fills this gap by returning LLM-ready markdown from a given URL. The self-hosted equivalent is `reader-mcp`.
+
+### Architecture
+`reader-mcp` is a single-container Node.js MCP server. It uses Mozilla Readability (Firefox Reader View engine) for article extraction and Turndown for HTML→markdown conversion. It runs as a stdio MCP subprocess launched by `docker compose run`.
+
+### SSRF threat model vs mcp-searxng §8
+
+| Threat | mcp-searxng web_url_read | reader-mcp crawling_exa |
+|--------|--------------------------|-------------------------|
+| DNS rebinding bypass | ❌ Vulnerable | ✅ Post-DNS IP check |
+| RFC-1918 access | ❌ Not blocked | ✅ Blocked |
+| 169.254.169.254 (metadata) | ❌ Not blocked | ✅ Blocked |
+| Unbounded memory | ❌ No cap | ✅ 2MB hard cap |
+| Redirect to internal | ❌ Not checked | ✅ Final URL re-validated |
+| Open redirect chain | ❌ Vulnerable | ✅ Blocked |
+
+### Residual risk
+A TOCTOU window exists between `dns.lookup()` and Node's internal resolver used by `fetch()`. This is inherent to application-layer SSRF mitigation. Defense-in-depth recommendation: add an egress firewall rule blocking RFC-1918 on the Docker bridge network.
+
+### Limitations
+- No JavaScript rendering — SPAs return incomplete content
+- No subpage crawling
+- Firecrawl (self-hosted) is the documented upgrade path if JS rendering is required

@@ -92,6 +92,21 @@ Both approaches expose the same search parameters:
 | `time_range` | enum | No | `day`, `month`, or `year` |
 | `safesearch` | number | No | `0` (off), `1` (moderate), `2` (strict) |
 
+### MCP tool listing
+
+| Tool | Source | Purpose |
+|---|---|---|
+| `searxng_web_search` | `mcp-searxng` | Keyword-based web search via SearXNG |
+| `crawling_exa` | `reader-mcp` | URL-to-markdown extraction for LLM-ready page content |
+
+## URL-to-Markdown Extraction
+
+`reader-mcp` adds the `crawling_exa` tool so agents can fetch a URL and get cleaned markdown (the gap SearXNG search alone does not cover).
+
+- SSRF protection: post-DNS IP checks block loopback/private/link-local/metadata ranges, with final-URL re-validation after redirects.
+- Limitation: no JavaScript rendering, so SPA-heavy pages may return incomplete content.
+- Full setup, threat model, and API details: [`docs/reader-mcp.md`](./docs/reader-mcp.md).
+
 ---
 
 ## Example response structure

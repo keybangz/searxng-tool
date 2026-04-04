@@ -50,6 +50,25 @@ Set up SearXNG-backed search in OpenCode in a few minutes.
    }
    ```
 
+   **Step 3b (Optional): URL-to-Markdown extraction**
+
+   ```bash
+   cd reader-mcp && npm install && cd ..
+   docker compose up --build -d
+   ```
+
+   Add this MCP entry to `opencode.json` (replace `/path/to/searxng-tool` with your actual path):
+
+   ```json
+   "reader": {
+     "type": "local",
+     "command": ["docker", "compose", "--project-directory", "/path/to/searxng-tool", "run", "--rm", "-i", "reader-mcp"],
+     "enabled": true
+   }
+   ```
+
+   See [`docs/reader-mcp.md`](docs/reader-mcp.md) for full details.
+
 6. Restart OpenCode. The `searxng-search` tool should now be available.
 
 ---
