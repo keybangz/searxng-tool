@@ -3,7 +3,7 @@
 use_default_settings: true
 
 server:
-  secret_key: "replace-with-output-of-openssl-rand-hex-32"
+  secret_key: "40a516dfa9afed24ee5d21b68befec2d1ef38368514566f2ccd560ba1409851f"
   limiter: false
   image_proxy: false
 

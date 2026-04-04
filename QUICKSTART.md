@@ -26,7 +26,20 @@ Set up SearXNG-backed search in OpenCode in a few minutes.
    docker compose up -d
    ```
 
-4. Add this MCP block to `~/.config/opencode/opencode.json`:
+4. *(Optional but recommended)* Enable autostart so SearXNG starts on login:
+
+   ```bash
+   # Copy the unit file and enable it
+   mkdir -p ~/.config/systemd/user
+   cp searxng.service ~/.config/systemd/user/
+   systemctl --user daemon-reload
+   systemctl --user enable --now searxng
+   ```
+
+   SearXNG will now start automatically when you log in. No need to `docker compose up` manually again.
+   See `docs/autostart.md` for full details and troubleshooting.
+
+5. Add this MCP block to `~/.config/opencode/opencode.json`:
 
    ```json
    "searxng": {
@@ -37,7 +50,7 @@ Set up SearXNG-backed search in OpenCode in a few minutes.
    }
    ```
 
-5. Restart OpenCode. The `searxng-search` tool should now be available.
+6. Restart OpenCode. The `searxng-search` tool should now be available.
 
 ---
 
