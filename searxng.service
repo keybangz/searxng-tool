@@ -1,6 +1,9 @@
 [Unit]
 Description=SearXNG self-hosted search (MCP backend)
 Documentation=https://github.com/searxng/searxng-docker
+After=docker.service
+Requires=docker.service
+Before=shutdown.target umount.target
 
 [Service]
 Type=oneshot
@@ -9,6 +12,7 @@ WorkingDirectory=%h/Github/searxng-tool
 ExecStart=/usr/bin/docker compose up -d
 ExecStop=/usr/bin/docker compose down
 TimeoutStartSec=60
+TimeoutStopSec=30
 
 [Install]
 WantedBy=default.target
