@@ -2,6 +2,8 @@
 
 `reader-mcp` is a self-hosted MCP server that fetches a URL and returns clean, LLM-ready markdown. It is the self-hosted equivalent of Exa's `crawling_exa` tool — the tool name is intentionally identical for agent compatibility.
 
+---
+
 ## What it does
 
 - Accepts 1–5 URLs per call
@@ -9,41 +11,56 @@
 - Extracts article content using [Mozilla Readability](https://github.com/mozilla/readability) (the same engine as Firefox Reader View)
 - Converts HTML to clean markdown via [Turndown](https://github.com/mixmark-io/turndown)
 - Strips noise: `<script>`, `<style>`, `<nav>`, `<footer>`, `<aside>`, `<iframe>`
-- Returns truncated output at `maxCharacters` (default 3000, max 50000)
+- Returns output truncated at `maxCharacters` (default 3000, max 50000)
 
 ## What it does NOT do
 
-- **No JavaScript rendering** — SPAs and heavily dynamic pages (React/Vue apps, Twitter, GitHub PR diffs) will return incomplete or empty content. For JS-rendered pages, Firecrawl (self-hosted) is the upgrade path.
+> [!WARNING]
+> **No JavaScript rendering.** SPAs and heavily dynamic pages (React/Vue apps, Twitter, GitHub PR diffs) will return incomplete or empty content. For JS-rendered pages, [Firecrawl](https://github.com/mendableai/firecrawl) (self-hosted) is the upgrade path.
+
+- No JavaScript rendering
 - No subpage crawling — one URL = one fetch
+
+---
 
 ## Architecture
 
 ```
 OpenCode agent
     │
-    │ stdio (MCP protocol)
+    │  stdio (MCP protocol)
     ▼
 docker compose run --rm -i reader-mcp
     │
-    │ SSRF-guarded HTTP fetch
+    │  SSRF-guarded HTTP fetch
     ▼
 Public internet (RFC-1918, loopback, link-local blocked)
 ```
 
-`reader-mcp` does not bind any network ports. It communicates exclusively over stdio — no network exposure whatsoever.
+`reader-mcp` does not bind any network ports. It communicates exclusively over stdio — no network exposure.
+
+---
 
 ## SSRF security model
 
-reader-mcp implements post-DNS SSRF protection:
+`reader-mcp` implements post-DNS SSRF protection:
 
 1. URL is parsed — only `http:` and `https:` protocols accepted
-2. Hostname is resolved via `dns.lookup({ all: true })` — **all returned IPs are checked**
-3. Any IP in the following ranges causes an immediate error: loopback (127.0.0.0/8, ::1), RFC-1918 (10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16), link-local (169.254.0.0/16, fe80::/10), unique-local IPv6 (fc00::/7), multicast
+2. Hostname resolved via `dns.lookup({ all: true })` — **all returned IPs are checked**
+3. Any IP in the following ranges causes an immediate error:
+   - Loopback: `127.0.0.0/8`, `::1`
+   - RFC-1918: `10.0.0.0/8`, `172.16.0.0/12`, `192.168.0.0/16`
+   - Link-local: `169.254.0.0/16`, `fe80::/10`
+   - Unique-local IPv6: `fc00::/7`
+   - Multicast: `224.0.0.0/4`, `ff00::/8`
 4. After `fetch()` follows redirects, the final URL is re-validated — prevents open-redirect chaining
 
-This closes the DNS-rebinding bypass that affects `mcp-searxng`'s `web_url_read` (documented in `docs/architecture-proposal.md §8`).
+This closes the DNS-rebinding bypass that affects `mcp-searxng`'s `web_url_read` (documented in [docs/architecture-proposal.md](architecture-proposal.md) §8).
 
-**Residual risk:** There is a small TOCTOU window between `dns.lookup` and Node's internal resolver used by `fetch`. This is a known limitation of application-layer SSRF mitigations. For defense-in-depth, add an egress firewall rule blocking RFC-1918 on the Docker network interface.
+> [!NOTE]
+> **Residual risk:** There is a small TOCTOU window between `dns.lookup()` and Node's internal resolver used by `fetch()`. This is a known limitation of application-layer SSRF mitigations. For defence-in-depth, add an egress firewall rule blocking RFC-1918 on the Docker bridge network interface.
+
+---
 
 ## Installation
 
@@ -55,11 +72,11 @@ From the repo root:
 docker compose build reader-mcp
 ```
 
-This only needs to be run once (or after updating the repo).
+Only needs to run once (or after updating the repo).
 
 ### 2. Add to opencode.json
 
-Add the following to the `mcp` object in `~/.config/opencode/opencode.json`. Replace `/path/to/searxng-tool` with the absolute path to your cloned repo (run `pwd` from the repo root to get it):
+Add to the `mcp` object in `~/.config/opencode/opencode.json`. Replace `/path/to/searxng-tool` with the absolute path to your cloned repo (run `pwd` from the repo root):
 
 ```json
 "reader": {
@@ -73,7 +90,10 @@ Add the following to the `mcp` object in `~/.config/opencode/opencode.json`. Rep
 
 The `crawling_exa` tool will be available immediately.
 
-> **Note:** `reader-mcp` is invoked on-demand — there is no persistent container to manage. Each call to `crawling_exa` spins up a short-lived container, fetches the URL, and exits.
+> [!NOTE]
+> `reader-mcp` is invoked on-demand — there is no persistent container to manage. Each call to `crawling_exa` spins up a short-lived container, fetches the URL, and exits. Expect ~200–400ms container startup latency per call.
+
+---
 
 ## Tool reference
 
@@ -82,25 +102,32 @@ The `crawling_exa` tool will be available immediately.
 Fetch URLs and return clean markdown.
 
 | Parameter | Type | Default | Description |
-|-----------|------|---------|-------------|
+|---|---|---|---|
 | `urls` | `string[]` | required | 1–5 URLs to fetch |
 | `maxCharacters` | `number` | `3000` | Max chars per URL (500–50000) |
 
 Returns an array of `{ url, markdown, characters }` objects, or `{ url, error }` on failure.
 
+---
+
 ## Troubleshooting
 
 ### `SSRF: blocked IP address` or `resolves to blocked address`
-The URL resolves to a private/internal IP. This is intentional SSRF protection.
+
+The URL resolves to a private or internal IP. This is intentional SSRF protection — the request is blocked by design.
 
 ### `Response exceeds 2MB size cap`
-The page is too large. Increase is not recommended — large pages indicate non-article content (e.g., data dumps). Use a more specific URL.
+
+The page is too large. Increasing the cap is not recommended — large responses indicate non-article content (data dumps, binary files). Use a more specific URL.
 
 ### `HTTP 4xx / 5xx`
-The target server rejected the request. Check the URL or try in a browser.
+
+The target server rejected the request. Check the URL manually in a browser.
 
 ### `docker compose run` is slow on first call
-The image is already built, but container startup adds ~200-400ms. This is expected for stdio-based Docker MCP servers.
+
+The image is already built, but container startup adds ~200–400ms. This is expected for stdio-based Docker MCP servers.
 
 ### Empty or poor markdown output
-The page likely requires JavaScript rendering. reader-mcp cannot help here — see Firecrawl for JS-heavy sites.
+
+The page likely requires JavaScript rendering. `reader-mcp` cannot help here — see Firecrawl for JS-heavy sites.

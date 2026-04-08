@@ -1,139 +1,101 @@
-# OpenCode Installation & Setup Guide (with SearXNG custom search tool)
+# OpenCode Installation & Setup Guide
 
-OpenCode is a terminal coding assistant you run inside your project. This guide shows how to install OpenCode, connect a model provider, configure it, and set up this repository’s SearXNG-based custom search tool so you can do web search without Exa/API keys.
-
-## Prerequisites
-
-Before starting, make sure you have:
-
-- A terminal emulator (macOS Terminal/iTerm2, Windows Terminal, Linux terminal)
-- **Node.js or Bun** (needed to install custom tool dependencies)
-- API access for at least one provider (for example OpenCode Zen, Anthropic, OpenAI, Gemini, Bedrock), unless you are using a local OpenAI-compatible endpoint (Ollama/llama.cpp)
+OpenCode is a terminal coding assistant you run inside your project. This guide covers installing OpenCode, connecting a model provider, configuring it, and setting up this repository's SearXNG-based search tool for web search without API keys.
 
 ---
 
-## 1) Install OpenCode
+## Prerequisites
+
+- A terminal emulator (macOS Terminal/iTerm2, Windows Terminal, Linux terminal)
+- **Node.js or Bun** — needed to install custom tool dependencies
+- API access for at least one provider (Anthropic, OpenAI, Google Gemini, Bedrock, etc.), or a local OpenAI-compatible endpoint (Ollama/llama.cpp)
+
+---
+
+## 1. Install OpenCode
 
 ### Linux / macOS / WSL
 
-Choose one method:
-
 ```bash
-# Homebrew (recommended, usually most up-to-date)
+# Homebrew (recommended)
 brew install anomalyco/tap/opencode
-```
 
-```bash
 # Install script
 curl -fsSL https://opencode.ai/install | bash
-```
 
-```bash
-# npm global install
+# npm global
 npm install -g opencode-ai
-```
 
-```bash
-# Arch Linux stable repo package
+# Arch Linux (stable)
 sudo pacman -S opencode
-```
 
-```bash
-# Arch Linux latest from AUR
+# Arch Linux (AUR, latest)
 paru -S opencode-bin
 ```
 
 ### Windows
 
-Choose one method:
-
 ```powershell
 # Chocolatey
 choco install opencode
-```
 
-```powershell
 # Scoop
 scoop install opencode
 ```
 
-### Docker (optional)
+### Docker
 
 ```bash
 docker run -it --rm ghcr.io/anomalyco/opencode
 ```
 
-### Verify install
+### Verify
 
 ```bash
 opencode --version
 ```
 
-If you see a version string, OpenCode is installed correctly.
-
 ---
 
-## 2) Connect a model provider
+## 2. Connect a model provider
 
-You have two supported paths.
-
-### Path A: Interactive TUI (recommended for first setup)
+### Interactive TUI (recommended)
 
 ```bash
 opencode
 ```
 
-Then run:
+Then run `/connect` and follow the UI flow.
 
-```text
-/connect
-```
-
-Follow the UI flow.
-
-### Path B: CLI auth flow
+### CLI auth
 
 ```bash
 opencode auth login
 ```
 
-Credentials are stored at:
+Credentials stored at `~/.local/share/opencode/auth.json`.
 
-```text
-~/.local/share/opencode/auth.json
-```
+**Provider options:**
 
-### Provider choice notes
-
-- **OpenCode Zen** is the easiest starting point (curated/tested models): `opencode.ai/auth`
-- Also supported: Anthropic, OpenAI, Google Gemini, Amazon Bedrock
-- Local options: Ollama / llama.cpp or any OpenAI-compatible endpoint
+- **OpenCode Zen** — easiest starting point: `opencode.ai/auth`
+- Anthropic, OpenAI, Google Gemini, Amazon Bedrock
+- Local: Ollama / llama.cpp or any OpenAI-compatible endpoint
 
 ---
 
-## 3) Configure OpenCode
+## 3. Configure OpenCode
 
-OpenCode merges config from multiple locations (it does not replace one with another).
+### Config file locations
 
-### Config files
+| File | Scope |
+|---|---|
+| `~/.config/opencode/opencode.json` | Global defaults |
+| `opencode.json` in project root | Project override (highest practical precedence, safe to commit) |
+| `tui.json` or `~/.config/opencode/tui.json` | TUI-specific settings |
 
-- **Global config:** `~/.config/opencode/opencode.json`
-- **Project config:** `opencode.json` in project root (**highest practical precedence** and safe to commit)
-- **Schema:** `https://opencode.ai/config.json`
-- **TUI config:** `tui.json` or `~/.config/opencode/tui.json` (separate from core config)
+**Precedence (low → high):** remote org → global → `OPENCODE_CONFIG` → project → `.opencode` dir → `OPENCODE_CONFIG_CONTENT`
 
-### Precedence (low → high)
-
-1. Remote org config
-2. Global config (`~/.config/opencode/opencode.json`)
-3. Custom config file (`OPENCODE_CONFIG`)
-4. Project config (`opencode.json`)
-5. `.opencode` directory
-6. Inline config (`OPENCODE_CONFIG_CONTENT`)
-
-### Minimal working `opencode.json`
-
-Create this in your project root:
+### Minimal `opencode.json`
 
 ```jsonc
 {
@@ -142,10 +104,10 @@ Create this in your project root:
   // Default model (provider/model)
   "model": "opencode/gpt-5",
 
-  // Smaller model used for lightweight tasks (titles, etc.)
+  // Lightweight model for titles and short tasks
   "small_model": "opencode/gpt-5-mini",
 
-  // Auto-update behavior: true, false, or "notify"
+  // Auto-update: true, false, or "notify"
   "autoupdate": "notify",
 
   // Tool permissions: allow, deny, ask
@@ -156,67 +118,39 @@ Create this in your project root:
     "webfetch": "allow"
   },
 
-  // Disable snapshots if repo is large
   "snapshot": false
 }
 ```
 
-Most useful options to tune first:
-
-- `model`
-- `permission`
-- `autoupdate`
-- `snapshot`
-- (Optional) `instructions` for project instruction files
-- (Optional) `compaction.auto` (defaults to `true`)
-
 ---
 
-## 4) First run in a project
-
-From your project directory:
+## 4. First run in a project
 
 ```bash
 cd /path/to/project
 opencode
 ```
 
-Inside OpenCode:
-
-```text
-/init
-```
-
-`/init` analyzes the repo and creates `AGENTS.md`, which captures project instructions/context. In most teams, this file is worth committing.
+Then run `/init` — it analyses the repo and creates `AGENTS.md` with project instructions. Worth committing to your repo.
 
 ---
 
-## 5) Install this project’s SearXNG search tool (key step)
+## 5. Install this project's SearXNG search tool
 
-This repository contains a custom OpenCode tool at:
+### What it does
 
-```text
-.opencode/tool/searxng-search.ts
-```
+Adds web search via a local SearXNG instance — a practical alternative to OpenCode's built-in Exa-backed `websearch`. No API key required. Queries 20+ search engines simultaneously.
 
-### What this tool does
-
-- Adds web search via a SearXNG instance
-- Works as a practical alternative to OpenCode’s built-in Exa-backed `websearch`
-- **No API key required**
-- More privacy-friendly / self-hostable workflow
-- Does **not** require `OPENCODE_ENABLE_EXA=1`
-
-> Built-in `websearch` uses Exa AI and may require `OPENCODE_ENABLE_EXA=1` or OpenCode provider setup. This SearXNG tool is independent of that.
+> [!NOTE]
+> The built-in `websearch` uses Exa AI and may require `OPENCODE_ENABLE_EXA=1`. This SearXNG tool is completely independent and does not need Exa env vars.
 
 ### A) Project-level install (recommended for this repo)
 
-Use this when you want the tool available only in one project.
+Ensure the project has:
+- `.opencode/tool/searxng-search.ts`
+- `.opencode/package.json` with `@opencode-ai/plugin`
 
-1. Ensure the project has:
-   - `.opencode/tool/searxng-search.ts`
-   - `.opencode/package.json` with `@opencode-ai/plugin`
-2. Install tool dependencies in the `.opencode/` directory.
+Install dependencies:
 
 ```bash
 cd /path/to/your/project/.opencode
@@ -224,27 +158,18 @@ npm install
 # or: bun install
 ```
 
-That’s it. OpenCode auto-loads tools from `.opencode/tool/`.
+OpenCode auto-loads tools from `.opencode/tool/`.
 
 ### B) Global install (available in all projects)
 
-Use this when you want the tool everywhere.
-
-1. Create global tool directory:
-
 ```bash
+# Create global tool directory
 mkdir -p ~/.config/opencode/tools
-```
 
-2. Copy the tool file there:
-
-```bash
+# Copy the tool
 cp /path/to/searxng-tool/.opencode/tool/searxng-search.ts ~/.config/opencode/tools/
-```
 
-3. Ensure a dependency file exists in `~/.config/opencode/` and install deps there:
-
-```bash
+# Create package.json and install deps
 cat > ~/.config/opencode/package.json <<'JSON'
 {
   "dependencies": {
@@ -255,59 +180,76 @@ JSON
 
 cd ~/.config/opencode
 npm install
-# or: bun install
 ```
 
-OpenCode auto-loads from `~/.config/opencode/tools/`.
+### C) SearXNG URL configuration
 
-### C) Point to a different SearXNG instance
+> [!IMPORTANT]
+> The tool defaults to `http://localhost:7790` (your local Docker instance). This requires the SearXNG container to be running (`docker compose up -d`).
+>
+> Do **not** point the tool at a public SearXNG instance — public instances apply aggressive rate limits that break agent workflows. The previous default (`search.rhscz.eu`) has been removed for this reason.
 
-By default, this tool uses:
-
-```text
-https://search.rhscz.eu
-```
-
-Override it with `SEARXNG_URL`:
+Override with `SEARXNG_URL`:
 
 ```bash
-export SEARXNG_URL="https://your-searxng.example.com"
+export SEARXNG_URL="http://localhost:7790"
 ```
 
-To persist it, add that `export` to your shell profile (`~/.bashrc`, `~/.zshrc`, etc.) and restart the shell.
+Add to your shell profile to persist (`~/.bashrc`, `~/.zshrc`, etc.).
 
-### D) Verify the tool works
+### D) Tool parameters
 
-1. Start OpenCode in a project where tool is installed:
+| Parameter | Type | Default | Description |
+|---|---|---|---|
+| `query` | string | required | Search query |
+| `num_results` | number | 20 | Results to return (1–50) |
+| `categories` | string | general | `general`, `it`, `science`, `news`, `social media`, `map` |
+| `engines` | string | all | Comma-separated engine override |
+| `language` | string | en | Language code |
+| `pageno` | number | 1 | Page number |
+| `time_range` | enum | — | `day`, `week`, `month`, `year` |
+| `freshness_bias` | boolean | false | Auto-applies `month` range when no `time_range` set |
+| `safesearch` | number | 0 | `0` off, `1` moderate, `2` strict |
+
+### E) Verify the tool works
 
 ```bash
 cd /path/to/project
 opencode
 ```
 
-2. Ask it to perform a web search, for example:
+Ask:
 
-```text
-Use the searxng-search tool to search: "OpenCode /init command"
+```
+Use the searxng-search tool to search for "OpenCode /init command"
 ```
 
-If you get search results (titles/URLs/snippets), setup is successful.
+Success: results with titles, URLs, and snippets.
 
 ---
 
-## 5b) MCP-based SearXNG (recommended for new setups)
+## 5b. MCP-based SearXNG (recommended for new setups)
 
-The project also ships a fully self-hosted MCP architecture using Docker Compose + the `mcp-searxng` MCP server. This approach is more portable, reusable across projects, and doesn't require copying tool files.
+See [QUICKSTART.md](QUICKSTART.md) for the full MCP setup. Add to `opencode.json`:
 
-> MCP stack update: legacy cloud MCPs `exa` and `context7` have been removed from the default setup in favor of local/self-hosted alternatives (`searxng`, `reader`, and `docs-mcp-server`).
+```json
+{
+  "mcp": {
+    "searxng": {
+      "type": "local",
+      "command": ["npx", "-y", "mcp-searxng@0.10.1"],
+      "environment": { "SEARXNG_URL": "http://localhost:7790" },
+      "enabled": true
+    }
+  }
+}
+```
 
-See [docs/architecture-proposal.md](docs/architecture-proposal.md) for the full design and setup instructions.
+---
 
-## 5c) URL-to-Markdown MCP (reader-mcp)
+## 5c. URL-to-Markdown MCP (reader-mcp)
 
-`reader-mcp` adds Exa-compatible URL-to-markdown extraction via the `crawling_exa` tool, so agents can fetch and clean full page content (not just keyword search results).
-
-Add this MCP entry to `opencode.json` (replace `/path/to/searxng-tool` with your real local path):
+Adds `crawling_exa` for fetching full page content as markdown. SSRF-hardened.
 
 ```json
 "reader": {
@@ -317,20 +259,13 @@ Add this MCP entry to `opencode.json` (replace `/path/to/searxng-tool` with your
 }
 ```
 
-Full setup, SSRF model, and tool API: [docs/reader-mcp.md](docs/reader-mcp.md).
+Full setup: [docs/reader-mcp.md](docs/reader-mcp.md)
 
-## 5d) Additional recommended MCPs
+---
 
-These MCPs complete a practical local-first stack for day-to-day coding workflows.
+## 5d. Additional recommended MCPs
 
-### `memory` MCP (`@modelcontextprotocol/server-memory`)
-
-Purpose:
-
-- Provides a persistent local knowledge graph MCP
-- Lets agents store/retrieve entities, relations, and observations across sessions
-
-Example `opencode.json` entry:
+### `memory` — Persistent knowledge graph
 
 ```json
 "memory": {
@@ -343,31 +278,13 @@ Example `opencode.json` entry:
 }
 ```
 
-Notes:
-
-- `MEMORY_FILE_PATH` should point to `~/.config/opencode/memory.jsonl`
-- Create the parent directory first if needed:
-
-```bash
-mkdir -p ~/.config/opencode
-```
-
-### `filesystem` MCP (`@modelcontextprotocol/server-filesystem`)
-
-Purpose:
-
-- Exposes scoped local file read/write tools to agents
-- Useful for controlled access to selected workspace/config paths
-
-Example `opencode.json` entry:
+### `filesystem` — Scoped file access
 
 ```json
 "filesystem": {
   "type": "local",
   "command": [
-    "bunx",
-    "-y",
-    "@modelcontextprotocol/server-filesystem",
+    "bunx", "-y", "@modelcontextprotocol/server-filesystem",
     "/mnt/extra_ssd/Github",
     "/home/<user>/.config/opencode"
   ],
@@ -375,26 +292,44 @@ Example `opencode.json` entry:
 }
 ```
 
-Important gotcha:
+> [!WARNING]
+> `server-filesystem` exits immediately at startup if **any** declared directory does not exist. Verify all paths exist before launching OpenCode.
 
-- `server-filesystem` exits immediately if **any** declared directory does not exist at startup.
-- Verify/create all paths before launching OpenCode.
+---
 
-## 6) Quick reference
+## 5e. Autostart with systemd
+
+Run SearXNG automatically on login:
+
+```bash
+mkdir -p ~/.config/systemd/user
+cp searxng.service ~/.config/systemd/user/
+systemctl --user daemon-reload
+systemctl --user enable --now searxng
+```
+
+The service shuts down cleanly on reboot and shutdown without hanging the system. See [docs/autostart.md](docs/autostart.md) for full details.
+
+> [!NOTE]
+> If you previously installed an older version of the service, re-copy and reload — the old version had a `Restart=on-failure` setting that caused shutdown hangs.
+
+---
+
+## 6. Quick reference
 
 ### TUI commands
 
 | Command | What it does |
 |---|---|
 | `/connect` | Connect or switch provider |
-| `/init` | Analyze project, generate `AGENTS.md` |
+| `/init` | Analyse project, generate `AGENTS.md` |
 | `/share` | Share current session |
 | `/undo` | Undo last change |
 | `/redo` | Redo change |
 | `/help` | Show command help and shortcuts |
 | `Tab` | Toggle Plan mode ↔ Build mode |
 
-### Common CLI commands
+### CLI commands
 
 | Command | What it does |
 |---|---|
@@ -402,73 +337,58 @@ Important gotcha:
 | `opencode` | Launch TUI in current directory |
 | `opencode auth login` | Authenticate provider from CLI |
 
-### Useful environment variables
+### Environment variables
 
 | Variable | Purpose |
 |---|---|
-| `SEARXNG_URL` | Override SearXNG base URL for this custom tool |
+| `SEARXNG_URL` | Override SearXNG base URL (default: `http://localhost:7790`) |
 | `OPENCODE_CONFIG` | Use an explicit custom config file |
 | `OPENCODE_CONFIG_DIR` | Use an explicit custom config directory |
-| `OPENCODE_ENABLE_EXA=1` | Enables built-in Exa websearch (not needed for SearXNG tool) |
+| `OPENCODE_ENABLE_EXA=1` | Enables built-in Exa websearch (not needed for this SearXNG tool) |
 
 ---
 
-## 7) Troubleshooting
+## 7. Troubleshooting
 
-### 1) `opencode: command not found`
+### `opencode: command not found`
 
-- Re-open terminal after install
-- Check your package manager path setup
-- Re-run install using another method (Homebrew/npm/choco/scoop)
-- Verify with `opencode --version`
+Re-open terminal after install. Try a different install method. Verify with `opencode --version`.
 
-### 2) Provider login works, but model calls fail
+### Provider login works but model calls fail
 
-- Re-run `/connect` or `opencode auth login`
-- Confirm credentials in `~/.local/share/opencode/auth.json`
-- Verify `model` in `opencode.json` matches an actually available provider/model
+Re-run `/connect` or `opencode auth login`. Verify credentials at `~/.local/share/opencode/auth.json`. Confirm the `model` in `opencode.json` matches an available provider/model.
 
-### 3) Custom SearXNG tool not appearing
+### Custom SearXNG tool not appearing
 
-- Confirm file path is exactly:
-  - Project: `.opencode/tool/searxng-search.ts`, or
-  - Global: `~/.config/opencode/tool/searxng-search.ts`
-- Confirm dependency install happened in the matching `.opencode`/config directory:
-  - `npm install` or `bun install`
-- Restart OpenCode after adding files/dependencies
+- Confirm file path is exactly `.opencode/tool/searxng-search.ts` (project) or `~/.config/opencode/tools/searxng-search.ts` (global)
+- Run `npm install` or `bun install` in the matching directory
+- Restart OpenCode
 
-### 4) Search tool loads, but requests fail
-
-- Check your `SEARXNG_URL`
-- Try curl manually:
+### Search tool loads but requests fail
 
 ```bash
-curl -I "$SEARXNG_URL"
+curl "http://localhost:7790/search?q=test&format=json"
+docker compose ps
+docker compose logs -f
 ```
 
-- If using a private/self-hosted instance, verify network access and TLS certs
+Ensure `SEARXNG_URL=http://localhost:7790`.
 
-### 5) Settings don’t seem to apply
+### System hangs on shutdown
 
-- Remember config is merged by precedence
-- Project `opencode.json` overrides global
-- `OPENCODE_CONFIG` / `OPENCODE_CONFIG_CONTENT` can override both
-- Inspect shell env for unexpected overrides
+Re-deploy the updated unit file:
 
-### 6) Exa websearch confusion
+```bash
+cp searxng.service ~/.config/systemd/user/
+systemctl --user daemon-reload
+```
 
-- Built-in `websearch` uses Exa AI and may need `OPENCODE_ENABLE_EXA=1`
-- This SearXNG custom tool is separate and does **not** need Exa env vars or API keys
-- If you only want SearXNG, just install the custom tool and use it explicitly
+See [docs/autostart.md](docs/autostart.md) for the full explanation.
 
-### 7) MCP server connection closes immediately (`-32000`)
+### MCP server connection closes immediately (`-32000`)
 
-- Most commonly caused by `@modelcontextprotocol/server-filesystem` failing during startup
-- The server exits if one or more declared directory arguments do not exist
-- Fix either by:
-  - Removing missing directories from the `filesystem` MCP command args, or
-  - Creating the missing directories before launching OpenCode
+Most commonly caused by `@modelcontextprotocol/server-filesystem` failing at startup — exits if any declared directory path does not exist. Remove the missing path from the command args or create it, then restart OpenCode.
 
----
+### Settings don't apply
 
-You now have OpenCode installed, connected, configured, and extended with this project’s SearXNG search tool.
+Config is merged by precedence. Project `opencode.json` overrides global. Inspect shell env for unexpected `OPENCODE_CONFIG`/`OPENCODE_CONFIG_CONTENT` overrides.

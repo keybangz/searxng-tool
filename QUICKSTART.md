@@ -1,98 +1,121 @@
 # Quickstart
 
-Set up SearXNG-backed search in OpenCode in a few minutes.
+Set up SearXNG-backed search in OpenCode in under 5 minutes.
+
+---
 
 ## Option A: MCP (recommended)
 
-1. Install Docker and Docker Compose  
-   https://docs.docker.com/get-docker/
+### 1. Install Docker
 
-2. Generate a SearXNG secret key:
+[https://docs.docker.com/get-docker/](https://docs.docker.com/get-docker/)
 
-   ```bash
-   openssl rand -hex 32
-   ```
+### 2. Generate a SearXNG secret key
 
-   Paste the output into `searxng/settings.yml` under:
+```bash
+openssl rand -hex 32
+```
 
-   ```yaml
-   server:
-     secret_key: "<paste-generated-key>"
-   ```
+Paste the output into `searxng/settings.yml` under `server.secret_key`:
 
-3. Start SearXNG:
+```yaml
+server:
+  secret_key: "paste-your-key-here"
+```
 
-   ```bash
-   docker compose up -d
-   ```
+### 3. Start SearXNG
 
-4. *(Optional but recommended)* Enable autostart so SearXNG starts on login:
+```bash
+docker compose up -d
+```
 
-   ```bash
-   # Copy the unit file and enable it
-   mkdir -p ~/.config/systemd/user
-   cp searxng.service ~/.config/systemd/user/
-   systemctl --user daemon-reload
-   systemctl --user enable --now searxng
-   ```
+Verify it works:
 
-   SearXNG will now start automatically when you log in. No need to `docker compose up` manually again.
-   See `docs/autostart.md` for full details and troubleshooting.
+```bash
+curl "http://localhost:7790/search?q=test&format=json" | head -c 200
+```
 
-5. Add this MCP block to `~/.config/opencode/opencode.json`:
+### 4. Enable autostart (recommended)
 
-   ```json
-   "searxng": {
-     "type": "local",
-     "command": ["npx", "-y", "mcp-searxng@0.10.1"],
-     "environment": { "SEARXNG_URL": "http://localhost:7790" },
-     "enabled": true
-   }
-   ```
+So SearXNG starts on login without manual intervention:
 
-6. *(Optional)* Add reader-mcp for URL-to-markdown extraction:
+```bash
+mkdir -p ~/.config/systemd/user
+cp searxng.service ~/.config/systemd/user/
+systemctl --user daemon-reload
+systemctl --user enable --now searxng
+```
 
-   ```bash
-   # Build the reader-mcp image (only needed once)
-   docker compose build reader-mcp
-   ```
+> [!TIP]
+> The service handles clean shutdown and reboot without hanging the system. See [docs/autostart.md](docs/autostart.md) for details and troubleshooting.
 
-   Then add this MCP entry to `opencode.json`:
+### 5. Add MCP config to OpenCode
 
-   ```json
-   "reader": {
-     "type": "local",
-     "command": ["docker", "compose", "--project-directory", "/path/to/searxng-tool", "run", "--rm", "-i", "reader-mcp"],
-     "enabled": true
-   }
-   ```
+Add to `~/.config/opencode/opencode.json` under the `"mcp"` key:
 
-   Run `pwd` in the repo root to get the correct absolute path.
-   See [`docs/reader-mcp.md`](docs/reader-mcp.md) for full details.
+```json
+"searxng": {
+  "type": "local",
+  "command": ["npx", "-y", "mcp-searxng@0.10.1"],
+  "environment": { "SEARXNG_URL": "http://localhost:7790" },
+  "enabled": true
+}
+```
 
-7. Restart OpenCode. Test `searxng-search` and (if installed) `crawling_exa`.
+### 6. (Optional) Add reader-mcp for URL-to-markdown
+
+Build the image once:
+
+```bash
+docker compose build reader-mcp
+```
+
+Add to `opencode.json`:
+
+```json
+"reader": {
+  "type": "local",
+  "command": ["docker", "compose", "--project-directory", "/absolute/path/to/searxng-tool", "run", "--rm", "-i", "reader-mcp"],
+  "enabled": true
+}
+```
+
+Run `pwd` in the repo root to get the absolute path.
+
+See [docs/reader-mcp.md](docs/reader-mcp.md) for full details.
+
+### 7. Restart OpenCode
+
+Test with:
+
+```
+Search for "SearXNG documentation" using searxng-search.
+```
 
 ---
 
 ## Option B: Legacy custom tool
 
-1. Copy the tool file to global OpenCode tools directory (**plural**):
+### 1. Copy the tool file
 
-   ```bash
-   cp .opencode/tool/searxng-search.ts ~/.config/opencode/tools/
-   ```
+```bash
+# Global (available in all projects)
+cp .opencode/tool/searxng-search.ts ~/.config/opencode/tools/
 
-2. Install dependencies:
+# Or project-level (copy to .opencode/tool/ in your project)
+```
 
-   ```bash
-   cd ~/.config/opencode
-   npm install
-   ```
+### 2. Install dependencies
 
-3. Restart OpenCode.
+```bash
+cd ~/.config/opencode
+npm install
+```
 
-4. Optional: point to a custom SearXNG instance by setting `SEARXNG_URL`.  
-   Default if unset: `https://search.rhscz.eu`
+### 3. Restart OpenCode
+
+> [!IMPORTANT]
+> The tool defaults to `http://localhost:7790`. It requires a local SearXNG instance running (`docker compose up -d`). Do **not** point it at a public SearXNG instance — public instances rate-limit aggressively and will break agent workflows.
 
 ---
 
@@ -100,19 +123,32 @@ Set up SearXNG-backed search in OpenCode in a few minutes.
 
 Ask an OpenCode agent:
 
-```text
+```
 Search for "SearXNG documentation" using searxng-search.
 ```
 
-Success looks like:
-- Tool call to `searxng-search`
-- JSON response with `query`, `results`, and `formattedResults`
-- At least one result containing `title`, `url`, and `snippet`
+**Expected response:**
+- Tool call to `searxng-search` or `searxng_web_search`
+- JSON with `query`, `results` array, `formattedResults`
+- At least one result with `title`, `url`, and `snippet`
 
-If it fails, see `README.md` troubleshooting and `docs/architecture-proposal.md`.
+**Verify `crawling_exa`** (if reader-mcp was set up):
 
-To verify `crawling_exa` (if reader-mcp was set up):
+```
+Use crawling_exa to fetch the content of https://example.com
+```
 
-Ask: "Use crawling_exa to fetch the content of https://example.com"
+Expected: clean markdown of the page.
 
-Success: returns clean markdown of the example.com page.
+---
+
+## Troubleshooting quick reference
+
+| Problem | Fix |
+|---|---|
+| No search results | Check `docker compose ps` — is SearXNG running? |
+| Rate limit errors | Ensure `SEARXNG_URL=http://localhost:7790` — never use a public instance |
+| Tool not in OpenCode | Check `~/.config/opencode/tools/` (plural), restart OpenCode |
+| Shutdown hang | Re-deploy updated `searxng.service` — see [docs/autostart.md](docs/autostart.md) |
+| `crawling_exa` slow | Expected ~200-400ms container startup per call |
+```

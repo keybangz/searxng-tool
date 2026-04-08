@@ -6,16 +6,23 @@ services:
       - "127.0.0.1:7790:8080"
     volumes:
       - ./searxng/settings.yml:/etc/searxng/settings.yml:ro
+      - ./searxng/uwsgi.ini:/etc/searxng/uwsgi.ini:ro
       - searxng-data:/etc/searxng
     environment:
       - SEARXNG_BASE_URL=http://localhost:7790
-    restart: on-failure
+    restart: unless-stopped
     cap_drop:
       - ALL
     cap_add:
       - CHOWN
       - SETGID
       - SETUID
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8080/healthz"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
 
   reader-mcp:
     build: ./reader-mcp

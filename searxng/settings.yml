@@ -1,18 +1,190 @@
-# SearXNG settings for local MCP use
-# Generate a secret key with: openssl rand -hex 32
+# SearXNG settings for local AI agent use — optimized for maximum research coverage
+# Generated secret: keep existing key unchanged
 use_default_settings: true
 
 server:
   secret_key: "40a516dfa9afed24ee5d21b68befec2d1ef38368514566f2ccd560ba1409851f"
   limiter: false
   image_proxy: false
-
-ui:
-  static_use_hash: true
+  method: "GET"
 
 search:
   safe_search: 0
   autocomplete: ""
+  default_lang: "en"
+  ban_time_on_fail: 0
+  max_ban_time_on_fail: 0
+  suspended_times:
+    SearxEngineAccessDeniedException: 0
+    SearxEngineCaptchaException: 0
+    SearxEngineResponseException: 0
+    cf_SearxEngineAccessDeniedException: 0
   formats:
     - html
     - json
+
+outgoing:
+  request_timeout: 6.0
+  max_request_timeout: 15.0
+  pool_connections: 100
+  pool_maxsize: 20
+  enable_http2: true
+
+ui:
+  static_use_hash: true
+  infinite_scroll: true
+  center_alignment: false
+  default_locale: "en"
+  theme_args:
+    simple_style: "dark"
+
+engines:
+  # ── General web search ──────────────────────────────────────────────────
+  - name: google
+    engine: google
+    shortcut: g
+    weight: 2.0
+
+  - name: bing
+    engine: bing
+    shortcut: b
+    weight: 1.5
+
+  - name: duckduckgo
+    engine: duckduckgo
+    shortcut: d
+    weight: 1.5
+
+  - name: brave
+    engine: brave
+    shortcut: br
+    weight: 1.5
+
+  - name: startpage
+    engine: startpage
+    shortcut: sp
+    weight: 1.2
+
+  - name: mojeek
+    engine: mojeek
+    shortcut: mjk
+    weight: 1.0
+
+  # ── News ───────────────────────────────────────────────────────────────
+  - name: google news
+    engine: google_news
+    shortcut: gn
+    categories: news
+    weight: 2.0
+
+  - name: bing news
+    engine: bing_news
+    shortcut: bn
+    categories: news
+    weight: 1.5
+
+  - name: brave news
+    engine: brave_news
+    shortcut: brn
+    categories: news
+    weight: 1.2
+
+  - name: hackernews
+    engine: hackernews
+    shortcut: hn
+    categories: news, it
+    weight: 1.5
+
+  # ── Technical / Code ───────────────────────────────────────────────────
+  - name: github
+    engine: github
+    shortcut: gh
+    categories: it
+    weight: 2.0
+
+  - name: stackoverflow
+    engine: stackoverflow
+    shortcut: so
+    categories: it
+    weight: 2.0
+
+  - name: npm
+    engine: npm
+    shortcut: npm
+    categories: it
+    weight: 1.5
+
+  - name: pypi
+    engine: pypi
+    shortcut: pypi
+    categories: it
+    weight: 1.5
+
+  - name: crates.io
+    engine: crates
+    shortcut: crts
+    categories: it
+    weight: 1.2
+
+  - name: docker hub
+    engine: docker_hub
+    shortcut: dh
+    categories: it
+    weight: 1.0
+
+  # ── Science / Academic ─────────────────────────────────────────────────
+  - name: semantic scholar
+    engine: semantic_scholar
+    shortcut: se
+    categories: science
+    weight: 2.0
+
+  - name: arxiv
+    engine: arxiv
+    shortcut: arx
+    categories: science
+    weight: 2.0
+
+  - name: pubmed
+    engine: pubmed
+    shortcut: pm
+    categories: science
+    weight: 1.5
+
+  - name: google scholar
+    engine: google_scholar
+    shortcut: gs
+    categories: science
+    weight: 1.8
+
+  # ── General knowledge ──────────────────────────────────────────────────
+  - name: wikipedia
+    engine: wikipedia
+    shortcut: wp
+    weight: 2.0
+    language: en
+
+  - name: wikidata
+    engine: wikidata
+    shortcut: wd
+    weight: 1.5
+
+  # ── Social / Community ─────────────────────────────────────────────────
+  - name: reddit
+    engine: reddit
+    shortcut: re
+    categories: social media
+    weight: 1.5
+
+  - name: lemmy communities
+    engine: lemmy_communities
+    shortcut: lc
+    categories: social media
+    weight: 0.8
+
+  # ── Maps ───────────────────────────────────────────────────────────────
+  - name: openstreetmap
+    engine: openstreetmap
+    shortcut: osm
+    categories: map
+    weight: 1.5

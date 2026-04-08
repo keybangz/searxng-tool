@@ -1,33 +1,33 @@
 # searxng-tool
 
-SearXNG-backed web search for OpenCode AI agents.
+SearXNG-backed web search for OpenCode AI agents. Self-hosted, no API keys, no rate limits.
 
 This repository supports two integration paths:
-- **MCP server (recommended):** OpenCode connects to `mcp-searxng` over stdio, usually backed by a local self-hosted SearXNG instance.
-- **Legacy custom tool (still functional):** a TypeScript OpenCode tool file (`.opencode/tool/searxng-search.ts`) using `@opencode-ai/plugin@1.3.13`.
+
+- **MCP server (recommended):** OpenCode connects to `mcp-searxng` over stdio, backed by a local self-hosted SearXNG instance running in Docker.
+- **Legacy custom tool (still functional):** A TypeScript OpenCode plugin file (`.opencode/tool/searxng-search.ts`) for direct embedding in a project.
 
 ---
 
 ## What this project does
 
-`searxng-tool` gives agents a search tool named **`searxng-search`** that returns web results as structured JSON (title, URL, snippet, engine, plus formatted text).
-
-Use it when you want agent-accessible search with SearXNG rather than direct calls to commercial search APIs.
+Gives AI agents a web search tool that aggregates results from 20+ search engines (Google, Bing, DuckDuckGo, Brave, GitHub, arXiv, StackOverflow, Wikipedia, and more) via a local SearXNG instance. Returns structured JSON — title, URL, snippet, engine, publish date — with no external API dependencies.
 
 ---
 
 ## Integration options
 
-## 1) MCP approach (recommended)
+### 1. MCP approach (recommended)
 
 For new setups, use OpenCode MCP config + `mcp-searxng@0.10.1`.
 
-### Components
-- `docker-compose.yml` at repository root: runs a local SearXNG service (bound to `127.0.0.1:7790`)
-- `npx -y mcp-searxng@0.10.1`: stdio MCP server process
+**Components:**
+
+- `docker-compose.yml` — runs SearXNG locally, bound to `127.0.0.1:7790`
+- `npx -y mcp-searxng@0.10.1` — stdio MCP server process
 - OpenCode MCP config in `opencode.json`
 
-### OpenCode MCP block
+**OpenCode MCP block:**
 
 ```json
 "searxng": {
@@ -38,80 +38,83 @@ For new setups, use OpenCode MCP config + `mcp-searxng@0.10.1`.
 }
 ```
 
-### First-run requirement
-Before starting SearXNG the first time, generate and set a secret:
+**First-run requirement:** Generate a SearXNG secret key before starting:
 
 ```bash
 openssl rand -hex 32
 ```
 
-Paste it into `searxng/settings.yml` under `server.secret_key`.
+Paste the output into `searxng/settings.yml` under `server.secret_key`.
 
 ---
 
-## 2) Legacy custom tool approach
+### 2. Legacy custom tool approach
 
-Still supported for existing OpenCode custom-tool setups.
+Still supported. Provides the `searxng-search` tool directly inside OpenCode without MCP.
 
-### Tool file
-- Path in this repo: `.opencode/tool/searxng-search.ts`
+**Tool file:** `.opencode/tool/searxng-search.ts`
 
-### Runtime dependency
-- `@opencode-ai/plugin@1.3.13`
+**Install modes:**
 
-### Install modes
-- **Global install:** copy `searxng-search.ts` to `~/.config/opencode/tools/` (**plural `tools` is required**)
-- **Project install:** place it in `<project-root>/.opencode/tool/`
+- **Project-level:** place in `<project-root>/.opencode/tool/` — tool is available only in that project
+- **Global:** copy to `~/.config/opencode/tools/` (plural `tools` is required)
 
-Then install dependencies inside `.opencode/`:
+Install dependencies:
 
 ```bash
 cd .opencode
 npm install
 ```
 
-### Default backend URL
-If `SEARXNG_URL` is not set, the legacy tool defaults to:
-
-```text
-https://search.rhscz.eu
-```
+> [!IMPORTANT]
+> The tool defaults to `http://localhost:7790` (your local SearXNG instance). Set `SEARXNG_URL` in your environment to override. Do **not** point it at a public SearXNG instance — public instances apply aggressive rate limits that will break agent search workflows.
 
 ---
 
 ## Tool interface
 
-Both approaches expose the same search parameters:
+### `searxng-search` (legacy tool) parameters
 
-| Parameter | Type | Required | Description |
-|---|---|---|---|
-| `query` | string | Yes | Search query |
-| `categories` | string | No | Comma-separated categories |
-| `language` | string | No | Language code (for example `en`, `de`) |
-| `pageno` | number | No | Page number (default: 1) |
-| `time_range` | enum | No | `day`, `month`, or `year` |
-| `safesearch` | number | No | `0` (off), `1` (moderate), `2` (strict) |
+| Parameter | Type | Required | Default | Description |
+|---|---|---|---|---|
+| `query` | string | Yes | — | Search query |
+| `num_results` | number | No | 20 | Results to return (1–50) |
+| `categories` | string | No | general | Comma-separated: `general`, `it`, `science`, `news`, `social media`, `map` |
+| `engines` | string | No | all | Comma-separated engine override (e.g., `google,bing`) |
+| `language` | string | No | en | Language code |
+| `pageno` | number | No | 1 | Page number — use higher values for more unique results |
+| `time_range` | enum | No | — | `day`, `week`, `month`, `year` — filter by recency |
+| `freshness_bias` | boolean | No | false | Auto-applies `month` time range when no `time_range` set |
+| `safesearch` | number | No | 0 | `0` off, `1` moderate, `2` strict |
 
-### MCP tool listing
+### MCP tools (via `mcp-searxng` + `reader-mcp`)
 
 | Tool | Source | Purpose |
 |---|---|---|
-| `searxng_web_search` | `mcp-searxng` | Keyword-based web search via SearXNG |
-| `crawling_exa` | `reader-mcp` | URL-to-markdown extraction for LLM-ready page content |
+| `searxng_web_search` | `mcp-searxng` | Keyword web search via local SearXNG |
+| `web_url_read` | `mcp-searxng` | URL fetch — see security note below |
+| `crawling_exa` | `reader-mcp` | SSRF-hardened URL-to-markdown extraction |
 
-## URL-to-Markdown Extraction
+> [!WARNING]
+> `web_url_read` from `mcp-searxng` has known SSRF vulnerabilities (DNS rebinding bypass, unbounded response buffering). For URL content fetching, use `crawling_exa` from `reader-mcp` instead. See [docs/architecture-proposal.md](docs/architecture-proposal.md) §8 for the full security audit.
 
-`reader-mcp` adds the `crawling_exa` tool so agents can fetch a URL and get cleaned markdown (the gap SearXNG search alone does not cover).
+---
 
-- SSRF protection: post-DNS IP checks block loopback/private/link-local/metadata ranges, with final-URL re-validation after redirects.
-- Limitation: no JavaScript rendering, so SPA-heavy pages may return incomplete content.
-- Full setup, threat model, and API details: [`docs/reader-mcp.md`](./docs/reader-mcp.md).
+## URL-to-Markdown extraction
+
+`reader-mcp` adds the `crawling_exa` tool so agents can fetch a URL and get clean markdown — filling the gap that keyword search alone cannot cover.
+
+- Accepts 1–5 URLs per call
+- Mozilla Readability extraction (Firefox Reader View engine)
+- SSRF protection: post-DNS IP checks block all RFC-1918/loopback/link-local/metadata ranges
+- 2MB response cap, 10s timeout
+- Limitation: no JavaScript rendering — SPA-heavy pages return incomplete content
+
+Full setup and API: [docs/reader-mcp.md](docs/reader-mcp.md)
 
 ---
 
 ## Example response structure
-
-Typical `searxng-search` output:
 
 ```json
 {
@@ -122,58 +125,90 @@ Typical `searxng-search` output:
       "title": "OpenCode MCP docs",
       "url": "https://example.com/docs/opencode/mcp",
       "snippet": "How to configure local MCP servers in OpenCode...",
-      "engine": "duckduckgo"
+      "engine": "google",
+      "publishedDate": "2025-03-15"
     }
   ],
-  "formattedResults": "1. OpenCode MCP docs\\n   URL: https://example.com/docs/opencode/mcp\\n   How to configure local MCP servers in OpenCode..."
+  "answers": [],
+  "formattedResults": "1. OpenCode MCP docs [2025-03-15] (via google)\n   URL: https://example.com/docs/opencode/mcp\n   How to configure local MCP servers in OpenCode..."
 }
 ```
 
-Fields:
-- `query`: executed query
-- `resultsFound`: total result count if available
-- `results`: up to 10 structured results
-- `formattedResults`: plain-text rendering useful for logs/debugging
+**Response fields:**
+
+| Field | Description |
+|---|---|
+| `query` | The executed query |
+| `resultsFound` | Total result count reported by SearXNG |
+| `results` | Array of up to `num_results` structured results |
+| `results[].publishedDate` | ISO date string when available |
+| `answers` | Direct answers from SearXNG (e.g., instant answer boxes) |
+| `formattedResults` | Plain-text rendering with index, date, engine |
 
 ---
 
-## Security note
+## Autostart (systemd)
 
-`mcp-searxng` includes additional MCP tools such as `web_url_read`.
+Run SearXNG automatically on login with no manual `docker compose` steps:
 
-- In this project, run MCP as a **local stdio-only** server from OpenCode.
-- `web_url_read` can introduce **SSRF risk** if exposed in less-trusted networked deployments.
-- For threat model, mitigations, and deployment guidance, read **`docs/architecture-proposal.md` §8**.
+```bash
+mkdir -p ~/.config/systemd/user
+cp searxng.service ~/.config/systemd/user/
+systemctl --user daemon-reload
+systemctl --user enable --now searxng
+```
+
+The service handles clean shutdown/reboot without hanging the system. See [docs/autostart.md](docs/autostart.md) for full details and troubleshooting.
 
 ---
 
 ## Troubleshooting
 
 ### Tool not showing in OpenCode
+
 - Confirm config location: `~/.config/opencode/opencode.json`
 - Restart OpenCode after config changes
-- For legacy mode, confirm path is `~/.config/opencode/tools/` (not `tool/`)
+- For legacy mode, confirm path is `~/.config/opencode/tools/` (plural)
 
 ### MCP server starts but searches fail
-- Check SearXNG is running: `docker compose ps`
-- Verify URL in MCP environment: `SEARXNG_URL=http://localhost:7790`
-- Check container logs: `docker compose logs -f`
 
-### Legacy tool fails to execute
-- Run dependency install in `.opencode/`: `npm install`
-- Ensure your configured `SEARXNG_URL` is reachable
-- If unset, it will use `https://search.rhscz.eu`
+```bash
+docker compose ps          # Is SearXNG running?
+docker compose logs -f     # Any errors?
+curl "http://localhost:7790/search?q=test&format=json"  # Direct test
+```
+
+### Search returns empty results
+
+- Try `time_range` without a value — some engines ignore time filtering
+- Check `categories` — `it` only queries tech engines, `general` queries all
+- Try `pageno=2` for a second page of results
+
+### System hangs on shutdown
+
+Re-deploy the updated unit file — the old version had a `Restart=on-failure` that caused respawning during shutdown:
+
+```bash
+cp searxng.service ~/.config/systemd/user/
+systemctl --user daemon-reload
+```
+
+See [docs/autostart.md](docs/autostart.md) for the full shutdown fix explanation.
 
 ---
 
 ## Documentation map
 
-- **5-minute setup:** [`QUICKSTART.md`](./QUICKSTART.md)
-- **Full OpenCode setup:** [`OPENCODE_INSTALLATION.md`](./OPENCODE_INSTALLATION.md)
-- **Architecture deep-dive:** [`docs/architecture-proposal.md`](./docs/architecture-proposal.md)
+| Document | Description |
+|---|---|
+| [QUICKSTART.md](QUICKSTART.md) | 5-minute setup guide |
+| [OPENCODE_INSTALLATION.md](OPENCODE_INSTALLATION.md) | Full OpenCode install + configuration |
+| [docs/autostart.md](docs/autostart.md) | Systemd autostart + shutdown fix |
+| [docs/architecture-proposal.md](docs/architecture-proposal.md) | MCP architecture + security audit |
+| [docs/reader-mcp.md](docs/reader-mcp.md) | reader-mcp reference: URL-to-markdown |
 
 ---
 
 ## License
 
-Released under the **MIT License**.
+MIT

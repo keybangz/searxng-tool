@@ -23,7 +23,7 @@ interface SearXNGResponse {
 }
 
 async function testSearch(query: string) {
-  const baseUrl = (process.env.SEARXNG_URL ?? "https://search.rhscz.eu").replace(/\/$/, "")
+  const baseUrl = (process.env.SEARXNG_URL ?? "http://localhost:7790").replace(/\/$/, "")
   const searxngUrl = baseUrl.endsWith("/search") ? baseUrl : `${baseUrl}/search`
 
   try {
