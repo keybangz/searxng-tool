@@ -23,7 +23,8 @@ For new setups, use OpenCode MCP config + `mcp-searxng@0.10.1`.
 
 **Components:**
 
-- `docker-compose.yml` — runs SearXNG locally, bound to `127.0.0.1:7790`
+- `docker-compose.yml` — runs SearXNG locally, bound to `127.0.0.1:7790`, with Valkey as a rate-limiting backend
+- `searxng/limiter.toml` — **must exist** for rate limiting to function; see [SearXNG limiter docs](https://docs.searxng.dev/admin/limiter.html)
 - `npx -y mcp-searxng@0.10.1` — stdio MCP server process
 - OpenCode MCP config in `opencode.json`
 
@@ -169,6 +170,22 @@ The service handles clean shutdown/reboot without hanging the system. See [docs/
 - Confirm config location: `~/.config/opencode/opencode.json`
 - Restart OpenCode after config changes
 - For legacy mode, confirm path is `~/.config/opencode/tools/` (plural)
+
+### Valkey warning: vm.overcommit_memory
+
+Valkey logs may show:
+
+```
+WARNING: The TCP backlog setting of 511 cannot be enforced because /proc/sys/net/core/somaxconn is set to the lower value of 128.
+WARNING overcommit_memory is set to 0! Background save may fail under low memory condition.
+```
+
+This is advisory only — Valkey will function normally. To silence it permanently:
+
+```bash
+echo "vm.overcommit_memory = 1" | sudo tee -a /etc/sysctl.conf
+sudo sysctl -p
+```
 
 ### MCP server starts but searches fail
 

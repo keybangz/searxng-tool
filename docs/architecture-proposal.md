@@ -79,9 +79,36 @@ Implement an internal MCP server using `@modelcontextprotocol/sdk` that wraps th
 ### `docker-compose.yml`
 
 ```yaml
-version: "3.8"
-
 services:
+  valkey:
+    image: valkey/valkey:latest
+    container_name: valkey
+    ports:
+      - "127.0.0.1:7791:6379"
+    volumes:
+      - valkey-data:/data
+    command: valkey-server --save "" --appendonly no
+    restart: unless-stopped
+    cap_drop:
+      - ALL
+    cap_add:
+      - SETGID
+      - SETUID
+    security_opt:
+      - no-new-privileges:true
+    healthcheck:
+      test: ["CMD", "valkey-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+        reservations:
+          memory: 64M
+
   searxng:
     image: searxng/searxng:latest
     container_name: searxng
@@ -89,7 +116,11 @@ services:
       - "127.0.0.1:7790:8080"
     volumes:
       - ./searxng/settings.yml:/etc/searxng/settings.yml:ro
+      - ./searxng/uwsgi.ini:/etc/searxng/uwsgi.ini:ro
+      - ./searxng/limiter.toml:/etc/searxng/limiter.toml:ro
       - searxng-data:/etc/searxng
+    environment:
+      - SEARXNG_BASE_URL=http://localhost:7790
     restart: unless-stopped
     cap_drop:
       - ALL
@@ -97,8 +128,38 @@ services:
       - CHOWN
       - SETGID
       - SETUID
+    depends_on:
+      valkey:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8080/healthz"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+        reservations:
+          memory: 512M
+
+  reader-mcp:
+    build: ./reader-mcp
+    container_name: reader-mcp
+    restart: "no"
+    stdin_open: true
+    tty: false
+    cap_drop:
+      - ALL
+    read_only: true
+    tmpfs:
+      - /tmp
+    security_opt:
+      - no-new-privileges:true
 
 volumes:
+  valkey-data:
   searxng-data:
 ```
 
@@ -109,7 +170,12 @@ use_default_settings: true
 
 server:
   secret_key: "replace-with-a-random-secret"
-  limiter: false
+  limiter: true
+  image_proxy: false
+  method: "POST"
+
+valkey:
+  url: valkey://valkey:6379/0
 
 search:
   formats:
@@ -119,8 +185,9 @@ search:
 
 **Key settings:**
 - `search.formats: [html, json]` — **required** for JSON API access (MCP server calls `?format=json`)
-- `server.limiter: false` — disables rate limiting for local/internal use
+- `server.limiter: true` — enables rate limiting via Valkey for concurrent session tracking
 - `server.secret_key` — generate with `openssl rand -hex 32`
+- `valkey.url` — connection string for the Valkey rate limiting backend
 
 ### Verify it works
 
@@ -203,10 +270,11 @@ Add the `"mcp"` block to `~/.config/opencode/opencode.json` (global) or your pro
 
 ### Phase 1 — Stand Up SearXNG
 
-1. Add `docker-compose.yml` to the repo
-2. Add `searxng/settings.yml` with JSON format and limiter disabled
-3. Start the service: `docker compose up -d`
-4. Verify: `curl "http://localhost:7790/search?q=test&format=json"`
+1. Add `docker-compose.yml` to the repo (includes Valkey service for rate limiting)
+2. Add `searxng/settings.yml` with JSON format and `server.limiter: true`
+3. Add `searxng/limiter.toml` for IP allowlisting and bot detection tuning
+4. Start the service: `docker compose up -d`
+5. Verify: `curl "http://localhost:7790/search?q=test&format=json"`
 
 ### Phase 2 — Wire OpenCode to MCP
 
@@ -253,9 +321,13 @@ Developer / AI Client
         v
  Self-hosted SearXNG (Docker, :7790)
         |
+        +-------- Valkey (:7791) --------+
+        |   (Rate limiting & sessions)   |
+        +--------------------------------+
+        |
         v
  External search providers
- (DuckDuckGo, Google, Bing, etc.)
+ (DuckDuckGo, Google, Bing, Brave, etc.)
 ```
 
 ---

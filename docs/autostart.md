@@ -12,6 +12,7 @@ Sets up SearXNG as a user-level systemd service so it starts automatically when 
 - Linux with systemd (most modern distros)
 - Docker installed and your user in the `docker` group
 - The project cloned to `~/Github/searxng-tool` (or adjust `WorkingDirectory` — see [[#Updating the project path|below]])
+- The Docker stack includes both SearXNG and Valkey (rate-limiting backend)
 
 ---
 
@@ -41,11 +42,13 @@ systemctl --user status searxng
 
 You should see `Active: active (exited)` — this is correct for a `Type=oneshot` service. It means `docker compose up -d` completed and the containers are running in the background.
 
-Confirm Docker has the container up:
+Confirm Docker has the containers up:
 
 ```bash
-docker ps | grep searxng
+docker ps | grep -E 'searxng|valkey'
 ```
+
+You should see both `searxng` and `valkey` containers listed.
 
 ---
 
