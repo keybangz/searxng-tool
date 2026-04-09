@@ -4,12 +4,9 @@ use_default_settings: true
 
 server:
   secret_key: "40a516dfa9afed24ee5d21b68befec2d1ef38368514566f2ccd560ba1409851f"
-  limiter: true
+  limiter: false
   image_proxy: false
-  method: "POST"
-
-valkey:
-  url: valkey://valkey:6379/0
+  method: "GET"
 
 search:
   safe_search: 0
@@ -29,9 +26,8 @@ search:
 outgoing:
   request_timeout: 6.0
   max_request_timeout: 15.0
-  pool_connections: 250
-  pool_maxsize: 30
-  keepalive_expiry: 12
+  pool_connections: 100
+  pool_maxsize: 20
   enable_http2: true
 
 ui:
@@ -87,6 +83,11 @@ engines:
     categories: news
     weight: 1.5
 
+  - name: brave news
+    engine: brave_news
+    shortcut: brn
+    categories: news
+    weight: 1.2
 
   - name: hackernews
     engine: hackernews
@@ -101,6 +102,11 @@ engines:
     categories: it
     weight: 2.0
 
+  - name: stackoverflow
+    engine: stackoverflow
+    shortcut: so
+    categories: it
+    weight: 2.0
 
   - name: npm
     engine: npm
@@ -170,6 +176,11 @@ engines:
     categories: social media
     weight: 1.5
 
+  - name: lemmy communities
+    engine: lemmy_communities
+    shortcut: lc
+    categories: social media
+    weight: 0.8
 
   # ── Maps ───────────────────────────────────────────────────────────────
   - name: openstreetmap

@@ -1,0 +1,10 @@
+[uwsgi]
+# Increase workers for parallel AI agent requests
+workers = 4
+threads = 4
+# Longer socket timeout for slow upstream engines
+socket-timeout = 30
+# Enable lazy apps (avoid worker initialization race)
+lazy-apps = true
+# Memory limits per worker
+limit-as = 512

@@ -1,0 +1,45 @@
+# SearXNG limiter configuration for local AI agent use
+# Optimized for concurrent sessions without external rate limiting
+
+[botdetection]
+
+# Network prefix for IP grouping
+ipv4_prefix = 32
+ipv6_prefix = 48
+
+# Trust localhost and private networks (since we're running locally)
+trusted_proxies = [
+  '127.0.0.0/8',
+  '::1',
+  '192.168.0.0/16',
+  '172.16.0.0/12',
+  '10.0.0.0/8',
+  'fd00::/8',
+]
+
+[botdetection.ip_limit]
+
+# Don't filter link-local addresses for local network usage
+filter_link_local = false
+
+# Disable link_token for local usage
+link_token = false
+
+[botdetection.ip_lists]
+
+# No blocked IPs for local usage
+block_ip = []
+
+# Allow all private networks
+pass_ip = [
+  '127.0.0.0/8',
+  '192.168.0.0/16',
+  '172.16.0.0/12',
+  '10.0.0.0/8',
+  '::1',
+  'fe80::/10',
+  'fd00::/8',
+]
+
+# Keep SearXNG org IPs in passlist
+pass_searxng_org = true
