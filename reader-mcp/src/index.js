@@ -13,6 +13,11 @@ import TurndownService from "turndown";
 import dns from "node:dns/promises";
 import net from "node:net";
 
+// Catch any unhandled promise rejections to prevent silent crashes.
+process.on("unhandledRejection", (reason) => {
+  process.stderr.write(`[reader-mcp] unhandledRejection: ${reason}\n`);
+});
+
 // ── SSRF guard ───────────────────────────────────────────────────────────────
 const BLOCKED_CIDRS = [
   { addr: "127.0.0.0", bits: 8 },
@@ -126,7 +131,7 @@ async function fetchWithCap(url) {
       chunks.push(value);
     }
     const contentType = res.headers.get("content-type") ?? "";
-    const body = Buffer.concat(chunks.map((c) => Buffer.from(c))).toString("utf-8");
+    const body = Buffer.concat(chunks).toString("utf-8");
     return { body, contentType, finalUrl: res.url };
   } finally {
     clearTimeout(timer);

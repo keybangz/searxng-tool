@@ -1,32 +1,45 @@
 [Unit]
 Description=SearXNG self-hosted search (MCP backend)
 Documentation=https://github.com/searxng/searxng-docker
-After=docker.service network-online.target
-Requires=docker.service
+After=docker.socket network-online.target
 Wants=network-online.target
 
 [Service]
 Type=oneshot
 RemainAfterExit=yes
-WorkingDirectory=%h/Github/searxng-tool
+WorkingDirectory=/mnt/extra_ssd/Github/searxng-tool
+
+# Clean up any leftover containers from a previous unclean shutdown
+# before starting. The leading '-' means failure is ignored (idempotent).
+ExecStartPre=-/usr/bin/docker compose down --timeout 5
 
 ExecStart=/usr/bin/docker compose up -d --wait
-ExecStop=/usr/bin/docker compose down --timeout 20
 
-# Kill only the direct docker compose process, not the entire cgroup.
-# This prevents systemd from racing with docker's own container stop logic.
-KillMode=process
+# Give containers 30 s to drain cleanly, then docker will SIGKILL stragglers.
+ExecStop=/usr/bin/docker compose down --timeout 30
+
+# Safety net: if ExecStop left orphaned containers (e.g. daemon crash),
+# kill them by project label so nothing leaks into the next boot.
+ExecStopPost=-/bin/sh -c 'docker ps -q --filter label=com.docker.compose.project=searxng-tool | xargs -r docker kill'
+
+# KillMode=mixed:
+#   - sends KillSignal to the *process group* of the service's main PID,
+#   - then sends FinalKillSignal to any survivors after TimeoutStopSec.
+# This covers the docker compose CLI process AND any child processes it
+# directly spawned, while still letting docker manage its own cgroups.
+# Under Debian 13 (cgroup v2 unified hierarchy) this prevents orphaned
+# containerd-shim processes that KillMode=process leaves behind.
+KillMode=mixed
 KillSignal=SIGTERM
 FinalKillSignal=SIGKILL
 
-# Do NOT restart during shutdown — oneshot + Restart=on-failure conflicts with
-# the stop sequence and can cause the service to respawn while systemd is trying
-# to shut it down, causing the visible shutdown hang.
-# Use the systemd service start/stop commands manually if restart is needed.
+# Do NOT auto-restart: oneshot services with Restart=on-failure conflict
+# with the stop sequence and cause visible shutdown hangs.
+Restart=no
 
 TimeoutStartSec=120
-# Must be > docker compose --timeout (20s) + overhead. Set to 45s.
-TimeoutStopSec=45
+# Must be > docker compose --timeout (30s) + stop overhead + ExecStopPost.
+TimeoutStopSec=60
 
 [Install]
-WantedBy=default.target
+WantedBy=multi-user.target

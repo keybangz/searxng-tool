@@ -1,6 +1,6 @@
 services:
   valkey:
-    image: valkey/valkey:latest
+    image: valkey/valkey:8.1-alpine
     container_name: valkey
     ports:
       - "127.0.0.1:7791:6379"
@@ -76,6 +76,12 @@ services:
       - /tmp
     security_opt:
       - no-new-privileges:true
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+        reservations:
+          memory: 64M
 
 volumes:
   valkey-data:
